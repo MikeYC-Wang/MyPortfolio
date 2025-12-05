@@ -18,11 +18,13 @@
   },
   "dependencies": {
     "@types/three": "^0.181.0",
+    "apexcharts": "^5.3.6",
     "axios": "^1.13.2",
     "pinia": "^3.0.3",
     "three": "^0.181.2",
     "vue": "^3.5.22",
-    "vue-router": "^4.6.3"
+    "vue-router": "^4.6.3",
+    "vue3-apexcharts": "^1.10.0"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.2",

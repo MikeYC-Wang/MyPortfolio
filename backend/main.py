@@ -9,6 +9,7 @@ from sqlalchemy.sql import func
 # ==========================================
 # 1. 資料庫連線設定
 # ==========================================
+# ⚠️ 請再次確認密碼是否正確
 SQLALCHEMY_DATABASE_URL = "postgresql://postgres:Day25143@localhost:5432/portfolio_db"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
@@ -49,6 +50,14 @@ class PostModel(Base):
     is_published = Column(Boolean, default=True)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
+# D. 技能 (雷達圖用 ✨)
+class SkillModel(Base):
+    __tablename__ = "skills"
+    id = Column(Integer, primary_key=True, index=True)
+    category = Column(String, unique=True, index=True)
+    score = Column(Integer)
+    skill_order = Column(Integer, default=0)
+
 # ==========================================
 # 3. 傳輸模型 (Pydantic Schemas)
 # ==========================================
@@ -87,12 +96,18 @@ class PostSchema(BaseModel):
     class Config:
         from_attributes = True
 
+# 技能 Schema (雷達圖用 ✨)
+class SkillSchema(BaseModel):
+    category: str
+    score: int
+    class Config:
+        from_attributes = True
+
 # ==========================================
 # 4. FastAPI 主程式與路由
 # ==========================================
 app = FastAPI()
 
-# 資料庫依賴注入
 def get_db():
     db = SessionLocal()
     try:
@@ -102,21 +117,18 @@ def get_db():
 
 @app.get("/")
 def read_root():
-    return {"message": "全端核心 V2.2 (完整修復版) 啟動成功！"}
+    return {"message": "全端核心 V2.3 (含技能) 啟動成功！"}
 
-# --- 專案 API (修復補回 ✨) ---
-# 解決首頁 404 Not Found 的問題
+# --- 專案 API ---
 @app.get("/api/projects", response_model=List[ProjectSchema])
 def get_projects(db: Session = Depends(get_db)):
     return db.query(ProjectModel).all()
 
 # --- 特效程式碼 API ---
-# 讀取列表
 @app.get("/api/snippets", response_model=List[CodeSnippetSchema])
 def get_snippets(db: Session = Depends(get_db)):
     return db.query(CodeSnippetModel).filter(CodeSnippetModel.is_published == True).order_by(CodeSnippetModel.id.desc()).all()
 
-# 新增特效
 @app.post("/api/snippets", response_model=CodeSnippetSchema)
 def create_snippet(snippet: CodeSnippetCreate, db: Session = Depends(get_db)):
     db_snippet = CodeSnippetModel(**snippet.dict())
@@ -124,6 +136,12 @@ def create_snippet(snippet: CodeSnippetCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_snippet)
     return db_snippet
+
+# --- 技能 API (新增 ✨) ---
+@app.get("/api/skills", response_model=List[SkillSchema])
+def get_skills(db: Session = Depends(get_db)):
+    # 按照 skill_order 排序
+    return db.query(SkillModel).order_by(SkillModel.skill_order).all()
 
 # --- 文章 API (預留) ---
 @app.get("/api/posts", response_model=List[PostSchema])
