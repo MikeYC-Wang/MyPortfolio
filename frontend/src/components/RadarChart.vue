@@ -185,16 +185,6 @@ const chartOptions = computed<ApexOptions>(() => {
 const fetchSkills = async () => {
   loading.value = true;
   try {
-    // 模擬數據 (如果沒有 API)
-    // const mockData = [
-    //   { category: 'JavaScript', score: 90 },
-    //   { category: 'Vue.js', score: 85 },
-    //   { category: 'CSS', score: 80 },
-    //   { category: 'HTML', score: 95 },
-    //   { category: 'TypeScript', score: 70 }
-    // ];
-    // skills.value = mockData;
-
     const response = await axios.get('/api/skills');
     skills.value = response.data;
   } catch (error) {
@@ -217,7 +207,9 @@ const setType = (type: ChartType) => {
 <template>
   <div class="chart-container">
     <div class="header">
-      <h3 :style="{ color: textColor }">技能分佈分析</h3>
+      <h3 :style="{ color: textColor }">
+        <i class="fa-solid fa-chart-pie" style="margin-right: 8px;"></i> 技能分佈分析
+      </h3>
       
       <!-- 圖表切換按鈕 -->
       <div class="controls">
@@ -226,27 +218,27 @@ const setType = (type: ChartType) => {
           :class="{ active: currentType === 'bar' }"
           title="堆疊長條圖"
         >
-          <span class="icon">📊</span> Bar
+          <span class="icon"><i class="fa-solid fa-chart-bar"></i></span> Bar
         </button>
         <button 
           @click="setType('donut')" 
           :class="{ active: currentType === 'donut' }"
           title="圓餅圖"
         >
-          <span class="icon">🍩</span> Donut
+          <span class="icon"><i class="fa-solid fa-circle-notch"></i></span> Donut
         </button>
         <button 
           @click="setType('radialBar')" 
           :class="{ active: currentType === 'radialBar' }"
           title="徑向圖"
         >
-          <span class="icon">🎯</span> Radial
+          <span class="icon"><i class="fa-solid fa-bullseye"></i></span> Radial
         </button>
       </div>
     </div>
 
     <div v-if="loading" class="loading-state">
-      <p>正在載入數據...</p>
+      <p><i class="fa-solid fa-spinner fa-spin"></i> 正在載入數據...</p>
     </div>
 
     <div v-else class="chart-wrapper">
@@ -292,6 +284,8 @@ const setType = (type: ChartType) => {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
+  display: flex;
+  align-items: center;
 }
 
 .controls {
@@ -314,7 +308,11 @@ const setType = (type: ChartType) => {
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+}
+
+.controls button .icon {
+  font-size: 0.9rem;
 }
 
 .controls button:hover {
@@ -338,6 +336,7 @@ const setType = (type: ChartType) => {
   align-items: center;
   justify-content: center;
   color: #888;
+  gap: 10px;
 }
 
 /* 深色模式適配 (如果父元件有傳入變數) */

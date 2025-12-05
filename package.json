@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@types/html2canvas": "^0.5.35",
+    "gsap": "^3.13.0",
+    "html2canvas": "^1.4.1"
+  }
+}

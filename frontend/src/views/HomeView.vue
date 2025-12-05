@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
-// 👇 引入雷達圖元件
 import RadarChart from '@/components/RadarChart.vue';
+import IntroScene from '@/components/IntroScene.vue';
+import VscodeScreen from '@/components/VscodeScreen.vue';
 
 interface Project {
   id: number;
@@ -14,17 +15,15 @@ interface Project {
 const projects = ref<Project[]>([]);
 const errorMsg = ref('');
 
-// 函數：檢查當前是否為深色主題 (用於傳遞給雷達圖)
 const isDark = computed(() => {
   if (typeof document !== 'undefined') {
     return document.body.classList.contains('theme-dark');
   }
-  return true; // 預設為深色
+  return true;
 });
 
 onMounted(async () => {
   try {
-    // 呼叫後端 API 取得作品集資料
     const response = await axios.get('/api/projects');
     projects.value = response.data;
   } catch (err) {
@@ -35,31 +34,29 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="container">
-    <h1 class="main-title">
-      <!-- 🚀 Emoji 保持原色 -->
-      <span class="emoji">🚀</span>
-      <!-- 文字套用漸層 -->
-      <span class="gradient-text">我的全端作品集</span>
-    </h1>
-    
-    <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
-    <p v-else-if="projects.length === 0 && !errorMsg" class="loading-text">正在載入資料庫...</p>
+  <div class="page-wrapper">
+    <IntroScene :isDark="isDark" />
 
-    <div v-else class="content-wrapper">
+    <div class="main-content container">
+      <h1 class="main-title">
+        <span class="emoji">🚀</span>
+        <span class="gradient-text">我的全端作品集</span>
+      </h1>
       
-      <!-- 1. 左側：雷達圖 -->
-      <div class="chart-area">
-        <!-- 將 isDark 狀態傳遞給雷達圖元件 -->
-        <RadarChart :isDark="isDark" />
-      </div>
+      <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
+      <p v-else-if="projects.length === 0 && !errorMsg" class="loading-text">正在載入資料庫...</p>
 
-      <!-- 2. 右側：作品集列表 -->
-      <div class="projects-list grid">
-        <div v-for="p in projects" :key="p.id" class="card">
-          <h2 class="gradient-text">{{ p.title }}</h2>
-          <p class="desc">{{ p.description }}</p>
-          <div class="tags">技術棧: {{ p.tech_stack }}</div>
+      <div v-else class="content-wrapper">
+        <div class="chart-area">
+          <RadarChart :isDark="isDark" />
+        </div>
+
+        <div class="projects-list grid">
+          <div v-for="p in projects" :key="p.id" class="card">
+            <h2 class="gradient-text">{{ p.title }}</h2>
+            <p class="desc">{{ p.description }}</p>
+            <div class="tags">技術棧: {{ p.tech_stack }}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -67,44 +64,51 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+/* 原本 container 的樣式保留，但我們包了一層 page-wrapper */
+.page-wrapper {
+  width: 100%;
+}
+
+.main-content {
+  position: relative;
+  z-index: 10; /* 確保內容在 Canvas 之上 (當 Canvas 淡出後) */
+  background: transparent; 
+  /* 這裡可以加一點 padding-top，
+    但因為 ScrollTrigger 的 pin 特性，
+    內容自然會接在動畫容器之後 
+  */
+  min-height: 100vh;
+}
+
 .container {
-  max-width: 1200px; /* 增加最大寬度以容納雷達圖 */
+  max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
   font-family: 'Helvetica Neue', Arial, sans-serif;
 }
 
-/* 內容排版：分左右欄 */
+/* ... 以下保留原本的 CSS ... */
 .content-wrapper {
   display: grid;
-  grid-template-columns: 1fr; /* 預設單欄 (手機版) */
+  grid-template-columns: 1fr;
   gap: 2rem;
 }
 
 @media (min-width: 900px) {
   .content-wrapper {
-    grid-template-columns: 400px 1fr; /* 電腦版：左邊固定寬度給雷達圖 */
+    grid-template-columns: 400px 1fr;
   }
 }
 
-.chart-area {
-  /* 確保在手機版時，雷達圖也能佔滿空間 */
-  min-height: 400px; 
-}
-
+.chart-area { min-height: 400px; }
 .projects-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* 作品列表 */
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
 }
 
-.loading-text {
-  text-align: center;
-  color: var(--text-color);
-  opacity: 0.7;
-}
+.loading-text { text-align: center; color: var(--text-color); opacity: 0.7; }
 
-/* 標題排版 */
 .main-title {
   text-align: center;
   margin-bottom: 2rem;
@@ -115,13 +119,8 @@ onMounted(async () => {
   gap: 10px;
 }
 
-/* 🚀 Emoji 保持原色 */
-.emoji {
-  display: inline-block;
-  -webkit-text-fill-color: initial; 
-}
+.emoji { display: inline-block; -webkit-text-fill-color: initial; }
 
-/* ✨ 漸層文字專用 class (顏色來自 App.vue 的 --gradient-text) */
 .gradient-text {
   background: var(--gradient-text);
   background-clip: text;
@@ -132,11 +131,9 @@ onMounted(async () => {
 
 .error { color: red; font-weight: bold; text-align: center;}
 
-/* 👇 卡片樣式：使用全域變數 */
 .card {
   background: var(--card-bg);
-  border: 1px solid var(--card-border); 
-  
+  border: 1px solid var(--card-border);
   box-shadow: var(--card-shadow);
   backdrop-filter: blur(10px);
   color: var(--text-color);
@@ -150,16 +147,6 @@ onMounted(async () => {
   box-shadow: var(--card-hover-shadow);
 }
 
-.desc { 
-  margin: 10px 0; 
-  opacity: 0.8;
-  line-height: 1.6;
-}
-
-.tags { 
-  font-size: 0.9rem; 
-  font-weight: bold; 
-  margin-top: 1rem;
-  opacity: 0.9;
-}
+.desc { margin: 10px 0; opacity: 0.8; line-height: 1.6; }
+.tags { font-size: 0.9rem; font-weight: bold; margin-top: 1rem; opacity: 0.9; }
 </style>

@@ -53,8 +53,10 @@ onMounted(async () => {
 
 <template>
   <div class="lab-container">
-    <!-- 標題：套用主題顏色 -->
-    <h1 class="page-title">🧪 特效實驗室</h1>
+    <!-- 標題：改用 Font Awesome -->
+    <h1 class="page-title">
+      <i class="fa-solid fa-flask"></i> 特效實驗室
+    </h1>
     
     <div class="grid">
       <div v-for="item in snippets" :key="item.id" class="lab-card">
@@ -95,6 +97,15 @@ onMounted(async () => {
   /* 預設為 Dark 模式的亮藍色 */
   color: #00f3ff; 
   text-shadow: 0 0 10px #00f3ff; 
+  
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+}
+
+.page-title i {
+  font-size: 0.9em;
 }
 
 /* 針對 Light 模式修正標題顏色 */
