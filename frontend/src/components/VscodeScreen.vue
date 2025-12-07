@@ -10,25 +10,35 @@ const fontSize = 'bold 42px "Menlo", "Monaco", "Courier New", monospace';
 
 // === 程式碼內容 ===
 const codeLines = [
-  "// --------------------------------",
-  "//  Auto-generating Portfolio...   ",
-  "// --------------------------------",
+
   "import { Experience } from 'data';",
   "",
   "const developer = {",
-  "  name: 'Mikey Wang',",
+  "  name: 'Mike Wang',",
   "  role: 'Frontend Engineer',",
-  "  skills: ['Vue', 'Three.js', 'Python'],",
-  "  status: 'Ready to code 🚀'",
+  "  skills: ['Vue', 'Vite', 'Python', 'HTML', 'CSS', 'JavaScript'],",
+  "  'ASP.NET Webform', 'ASP.NET Core', 'C#'],",
   "};",
   "",
-  "function initWorld() {",
-  "  console.log('Hello World!');",
-  "  return <Portfolio />;",
+  "async function startDay() {",
+  "  console.log('🌞 早安！系統啟動中...');",
+  "  ",
+  "  try {",
+  "    await Coffee.drink(); // 關鍵步驟",
+  "    mike.mood = 'Ready to code 🚀';",
+  "    ",
+  "    // 嘗試修復昨天的 Bug...",
+  "    // const bug = null; // 假裝沒看見",
+  "    ",
+  "    return createApp(Portfolio).mount('#app');",
+  "  } catch (err) {",
+  "    console.error('😱 崩潰啦：', err);",
+  "    return '去睡覺吧';",
+  "  }",
   "}",
   "",
   "// Status: 200 OK",
-  "// Waiting for user input..."
+  "// Waiting for inspiration..."
 ];
 
 // === VS Code Dark+ Theme Colors ===
@@ -37,6 +47,7 @@ const colors = {
   sideBar: '#252526', // 左側行號區背景
   titleBar: '#2d2d2d', // 上方標題列
   tabActive: '#1e1e1e', // 啟動的分頁
+  tabInactive: '#2d2d2d', // 未啟動的分頁
   text: '#d4d4d4',
   keyword: '#569cd6',   // pink/purple
   string: '#ce9178',    // orange
@@ -57,6 +68,9 @@ let cursorVisible = true;
 let typingTimer: any = null;
 let blinkTimer: any = null;
 
+// === 圖示載入輔助函式 ===
+// 注意：這裡使用 font-awesome 的 unicode 或者是直接繪製簡單圖形來模擬 icon 會比較快
+// 為了最佳效果，這裡我們使用 Emoji 或簡單的文字顏色來代表 Logo
 const drawInterface = (ctx: CanvasRenderingContext2D) => {
   // 1. 主背景
   ctx.fillStyle = colors.bg;
@@ -66,37 +80,90 @@ const drawInterface = (ctx: CanvasRenderingContext2D) => {
   ctx.fillStyle = colors.sideBar;
   ctx.fillRect(0, 0, 120, height);
 
-  // 3. 標題欄 (Title Bar / Tabs)
-  ctx.fillStyle = colors.titleBar; // Tab Bar Background
+  // 3. 標題欄 (Title Bar / Tabs Background)
+  ctx.fillStyle = colors.titleBar;
   ctx.fillRect(0, 0, width, 80);
 
-  // 4. 繪製 "App.tsx" 分頁標籤
-  ctx.fillStyle = colors.tabActive; // Active Tab Background
-  ctx.fillRect(0, 0, 300, 80);
+  // === 分頁繪製設定 ===
+  const tabWidth = 350; // 每個分頁的寬度
+  const tabHeight = 80;
   
-  // 分頁上方的藍色線條
-  ctx.fillStyle = '#007acc';
-  ctx.fillRect(0, 0, 300, 3);
+  // -- Tab 1: App.vue (Active) --
+  ctx.fillStyle = colors.tabActive; 
+  ctx.fillRect(0, 0, tabWidth, tabHeight);
+  
+  // 頂部綠色線條 (Vue Green - Active Indicator)
+  ctx.fillStyle = '#42b883'; 
+  ctx.fillRect(0, 0, tabWidth, 3);
 
-  // 分頁文字 "App.tsx"
+  // Vue Logo (使用 Emoji 替代或繪製簡單圖形) - 這裡用 V 作為 Logo 示意
   ctx.font = 'bold 36px "Segoe UI", Arial, sans-serif';
-  ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'left';
-  ctx.fillText('⚛️ App.tsx', 40, 50);
-  
-  // 其他分頁 (暗淡)
-  ctx.fillStyle = '#969696';
-  ctx.fillText('main.py', 340, 50);
-  ctx.fillText('style.css', 550, 50);
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#42b883'; // Vue Green
+  ctx.fillText('V', 40, tabHeight / 2); // 簡單的 V 代表 Vue
 
-  // 5. 底部狀態列
+  // 檔名文字
+  ctx.font = 'bold 36px "Segoe UI", Arial, sans-serif';
+  ctx.fillStyle = '#ffffff'; // Active Text White
+  ctx.fillText('App.vue', 80, tabHeight / 2);
+  
+  // 關閉按鈕 (x)
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '28px Arial';
+  ctx.fillText('×', tabWidth - 40, tabHeight / 2);
+
+
+  // -- Tab 2: main.py (Inactive) --
+  const tab2X = tabWidth;
+  ctx.fillStyle = colors.tabInactive; 
+  // 繪製分隔線
+  ctx.strokeStyle = '#1e1e1e';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(tab2X, 15);
+  ctx.lineTo(tab2X, 65);
+  ctx.stroke();
+
+  // Python Logo (🐍) - 模擬
+  ctx.font = '36px "Segoe UI Emoji", "Segoe UI", Arial, sans-serif';
+  ctx.fillStyle = '#3776AB'; // Python Blue/Yellow mixed visual
+  ctx.fillText('🐍', tab2X + 30, tabHeight / 2);
+
+  // 檔名文字
+  ctx.font = '36px "Segoe UI", Arial, sans-serif'; // Inactive use regular weight
+  ctx.fillStyle = '#969696'; // Inactive Text Grey
+  ctx.fillText('main.py', tab2X + 80, tabHeight / 2);
+
+
+  // -- Tab 3: index.ts (Inactive) --
+  const tab3X = tabWidth * 2;
+  // 繪製分隔線
+  ctx.beginPath();
+  ctx.moveTo(tab3X, 15);
+  ctx.lineTo(tab3X, 65);
+  ctx.stroke();
+
+  // TS Logo (TS)
+  ctx.font = 'bold 28px "Segoe UI", Arial, sans-serif';
+  ctx.fillStyle = '#3178C6'; // TS Blue
+  ctx.fillText('TS', tab3X + 30, tabHeight / 2);
+
+  // 檔名文字
+  ctx.font = '36px "Segoe UI", Arial, sans-serif';
+  ctx.fillStyle = '#969696';
+  ctx.fillText('index.ts', tab3X + 80, tabHeight / 2);
+
+
+  // 5. 底部狀態列 (保持不變)
   ctx.fillStyle = '#007acc';
   ctx.fillRect(0, height - 60, width, 60);
   ctx.fillStyle = 'white';
   ctx.font = '30px Arial';
+  ctx.textBaseline = 'bottom'; // 恢復基準線設定，以免影響 drawCode
   ctx.fillText('main', 40, height - 20);
   ctx.textAlign = 'right';
-  ctx.fillText('TypeScript React', width - 40, height - 20);
+  ctx.fillText('Vue TypeScript', width - 40, height - 20); // 更改為 Vue TypeScript
   ctx.fillText('Ln 12, Col 42', width - 350, height - 20);
 };
 

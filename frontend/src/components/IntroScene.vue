@@ -189,13 +189,17 @@ const initScene = async () => {
       model.rotation.y = 0; 
 
       // === 🔍 鎖定正確的模型名稱 ===
-      const targetMeshNames = ['Monitor_Cube_1', 'Monitor_Cube_2'];
+      const targetMeshNames = ['Monitor_Cube_2']; 
       
       model.traverse((child) => {
         if ((child as THREE.Mesh).isMesh) {
+
           if (targetMeshNames.includes(child.name) && screenTexture) {
             const mesh = child as THREE.Mesh;
-            // 賦予材質
+            if (Array.isArray(mesh.material)) {
+               console.warn('發現多材質 Mesh，直接替換可能會覆蓋邊框！');
+            }
+
             mesh.material = new THREE.MeshStandardMaterial({
               map: screenTexture,
               emissive: 0xffffff,
@@ -203,6 +207,7 @@ const initScene = async () => {
               emissiveIntensity: 0.8,
               roughness: 0.1,
               metalness: 0.5,
+              side: THREE.FrontSide,
             });
           }
         }

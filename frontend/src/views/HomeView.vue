@@ -71,12 +71,8 @@ onMounted(async () => {
 
 .main-content {
   position: relative;
-  z-index: 10; /* 確保內容在 Canvas 之上 (當 Canvas 淡出後) */
+  z-index: 10;
   background: transparent; 
-  /* 這裡可以加一點 padding-top，
-    但因為 ScrollTrigger 的 pin 特性，
-    內容自然會接在動畫容器之後 
-  */
   min-height: 100vh;
 }
 
