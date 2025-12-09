@@ -12,7 +12,7 @@ gsap.registerPlugin(ScrollTrigger);
 const props = defineProps<{ isDark: boolean }>();
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const containerRef = ref<HTMLDivElement | null>(null);
-const vscodeScreenRef = ref<InstanceType<typeof VscodeScreen> | null>(null);
+const vscodeScreenRef = ref<InstanceType<typeof VscodeScreen> & { turnOn: () => Promise<void>, isPoweredOn: boolean } | null>(null);
 
 let scene: THREE.Scene;
 let camera: THREE.PerspectiveCamera;
@@ -26,6 +26,13 @@ const earthRadius = 0.5;
 let extraZoomDistance = 0;
 const MAX_EXTRA_ZOOM = 10;
 const BASE_CAMERA_Z = 6;
+
+// === 互動相關變數 ===
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let pcCaseMesh: THREE.Mesh | null = null; // 儲存主機 Mesh
+let startHintSprite: THREE.Sprite | null = null; // 儲存"點擊開機"的 Sprite
+let isHoveringPc = false; // 是否滑鼠停在主機上
 
 // ... (程式語言圖示定義保持不變)
 const languages = [
@@ -76,6 +83,40 @@ const createLabelTexture = (text: string, color: string, iconUrl: string): Promi
       resolve(new THREE.CanvasTexture(canvas));
     }
   });
+};
+
+// === 新增：建立純文字提示貼圖 ("點擊開機") ===
+const createHintTexture = (text: string): THREE.CanvasTexture => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const width = 512;
+    const height = 128;
+    canvas.width = width;
+    canvas.height = height;
+
+    if (ctx) {
+        // 背景 (圓角矩形)
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'; // 半透明黑底
+        ctx.beginPath();
+        ctx.roundRect(10, 10, width - 20, height - 20, 30);
+        ctx.fill();
+        
+        // 邊框
+        ctx.strokeStyle = '#00ffff';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        // 文字
+        ctx.font = 'bold 60px "Microsoft JhengHei", Arial, sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = '#00ffff';
+        ctx.shadowBlur = 15;
+        ctx.fillText(text, width / 2, height / 2);
+    }
+    
+    return new THREE.CanvasTexture(canvas);
 };
 
 const initFloatingBackground = async () => {
@@ -131,9 +172,8 @@ const initScene = async () => {
   camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
   camera.position.set(0, 1.5, BASE_CAMERA_Z); 
   
-  // 1. 設置 Renderer 的像素比例以確保清晰度
   renderer = new THREE.WebGLRenderer({ canvas: canvasRef.value, alpha: true, antialias: true });
-  renderer.setPixelRatio(window.devicePixelRatio); // 重要：適應高解析度螢幕
+  renderer.setPixelRatio(window.devicePixelRatio); 
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -159,17 +199,12 @@ const initScene = async () => {
   await initFloatingBackground();
   createParticleEarth(); 
 
-  // 設定螢幕貼圖
   if (vscodeScreenRef.value && vscodeScreenRef.value.canvasRef) {
     const screenCanvas = vscodeScreenRef.value.canvasRef;
     screenTexture = new THREE.CanvasTexture(screenCanvas);
     screenTexture.flipY = false;
     screenTexture.colorSpace = THREE.SRGBColorSpace;
-    
-    // 2. 開啟 Anisotropy (各向異性過濾)，這會讓傾斜角度看螢幕時變銳利
     screenTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    
-    // 3. 調整過濾器
     screenTexture.minFilter = THREE.LinearMipmapLinearFilter;
     screenTexture.magFilter = THREE.LinearFilter;
   }
@@ -188,18 +223,14 @@ const initScene = async () => {
       model.position.z = -center.z * scale;
       model.rotation.y = 0; 
 
-      // === 🔍 鎖定正確的模型名稱 ===
       const targetMeshNames = ['Monitor_Cube_2']; 
-      
+      const pcCaseName = 'Support_Cube002'; // 主機名稱
+
       model.traverse((child) => {
         if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
 
           if (targetMeshNames.includes(child.name) && screenTexture) {
-            const mesh = child as THREE.Mesh;
-            if (Array.isArray(mesh.material)) {
-               console.warn('發現多材質 Mesh，直接替換可能會覆蓋邊框！');
-            }
-
             mesh.material = new THREE.MeshStandardMaterial({
               map: screenTexture,
               emissive: 0xffffff,
@@ -209,6 +240,39 @@ const initScene = async () => {
               metalness: 0.5,
               side: THREE.FrontSide,
             });
+          }
+
+          // === 處理主機 & 建立提示 ===
+          if (child.name === pcCaseName) {
+            pcCaseMesh = mesh;
+            
+            // 建立"點擊開機"的飄浮 Sprite
+            const hintTexture = createHintTexture("點擊開機 👆");
+            const hintMaterial = new THREE.SpriteMaterial({ 
+                map: hintTexture, 
+                transparent: true,
+                depthTest: false, // 確保文字總是在最上層（可選）
+                depthWrite: false 
+            });
+            startHintSprite = new THREE.Sprite(hintMaterial);
+            
+            // 設定提示標籤的大小和位置 (放在主機上方)
+            startHintSprite.scale.set(1.5, 0.375, 1); // 比例要配合 Canvas 寬高 (512x128 = 4:1)
+            
+            // 取得主機的中心點或頂部位置
+            // 這裡直接使用 mesh 的位置並稍微往上加
+            // 由於 model 有縮放，這裡的位置計算需要是相對的
+            // 我們可以直接將 Sprite 加為 scene 的子物件，並設定絕對位置
+            // 或是加為主機的子物件 (但縮放會被影響)，這裡選擇加到 scene 並手動對位
+            
+            // 計算主機在世界座標的位置
+            const box = new THREE.Box3().setFromObject(mesh);
+            const topY = box.max.y;
+            const centerX = (box.min.x + box.max.x) / 2;
+            const centerZ = (box.min.z + box.max.z) / 2;
+
+            startHintSprite.position.set(centerX, topY + 0.5, centerZ);
+            scene.add(startHintSprite);
           }
         }
       });
@@ -258,9 +322,69 @@ const setupScrollAnimation = () => {
     .to(canvasRef.value, { opacity: 0, duration: 0.5 }, "<0.5");
 };
 
+// === Raycaster 互動邏輯 ===
+const onMouseMove = (event: MouseEvent) => {
+    if (!canvasRef.value) return;
+    
+    // 計算滑鼠座標 (NDC -1 到 +1)
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    if (pcCaseMesh && camera) {
+        raycaster.setFromCamera(mouse, camera);
+        
+        // 偵測是否與主機相交
+        const intersects = raycaster.intersectObject(pcCaseMesh);
+        const isInteracting = intersects.length > 0;
+        
+        // 如果狀態改變 (進入或離開主機)
+        if (isInteracting !== isHoveringPc) {
+            isHoveringPc = isInteracting;
+            // 重要：改變滑鼠游標形狀
+            canvasRef.value.style.cursor = isHoveringPc ? 'pointer' : 'default';
+        }
+    }
+};
+
+const onClick = () => {
+    // 只有在滑鼠停留在主機上時才觸發
+    if (!isHoveringPc || !pcCaseMesh || !vscodeScreenRef.value) return;
+    
+    if (vscodeScreenRef.value.isPoweredOn) return;
+
+    // 1. 開機
+    vscodeScreenRef.value.turnOn();
+    
+    // 2. 主機震動反饋
+    gsap.to(pcCaseMesh.scale, {
+        x: pcCaseMesh.scale.x * 0.95,
+        y: pcCaseMesh.scale.y * 0.95,
+        z: pcCaseMesh.scale.z * 0.95,
+        duration: 0.1,
+        yoyo: true,
+        repeat: 1
+    });
+
+    // 3. 隱藏提示標籤
+    if (startHintSprite) {
+        gsap.to(startHintSprite.material, {
+            opacity: 0,
+            duration: 0.5,
+            onComplete: () => {
+                if (startHintSprite) startHintSprite.visible = false;
+            }
+        });
+    }
+    
+    // 4. 重置游標
+    if (canvasRef.value) canvasRef.value.style.cursor = 'default';
+    isHoveringPc = false;
+};
+
 const animate = () => {
   animationId = requestAnimationFrame(animate);
   if (controls) controls.update();
+  
   floatingElements.forEach(el => {
     el.sprite.position.add(el.velocity);
     const limit = 15;
@@ -269,8 +393,17 @@ const animate = () => {
     if (el.sprite.position.y > 10) el.sprite.position.y = -10;
     if (el.sprite.position.y < -10) el.sprite.position.y = 10;
   });
+
   if (earthMesh) earthMesh.rotation.y += 0.001; 
   if (screenTexture) screenTexture.needsUpdate = true;
+
+  // === 提示標籤的飄浮動畫 ===
+  if (startHintSprite && startHintSprite.visible) {
+      // 讓它上下輕微浮動
+      const time = Date.now() * 0.003;
+      startHintSprite.position.y += Math.sin(time) * 0.002;
+  }
+
   if (renderer && scene && camera) renderer.render(scene, camera);
 };
 
@@ -295,21 +428,33 @@ onMounted(async () => {
   animate();
   window.addEventListener('resize', handleResize);
   window.addEventListener('wheel', handleWheel, { passive: false });
+  // 加入事件監聽
+  window.addEventListener('mousemove', onMouseMove);
+  window.addEventListener('click', onClick);
 });
 
 onUnmounted(() => {
   cancelAnimationFrame(animationId);
   window.removeEventListener('resize', handleResize);
   window.removeEventListener('wheel', handleWheel);
+  window.removeEventListener('mousemove', onMouseMove);
+  window.removeEventListener('click', onClick);
+
   ScrollTrigger.getAll().forEach(t => t.kill());
   if (renderer) renderer.dispose();
   if (controls) controls.dispose();
   if (screenTexture) screenTexture.dispose();
+  
+  // 清理資源
   floatingElements.forEach(el => {
     const material = el.sprite.material;
     if (!Array.isArray(material) && material.map) material.map.dispose();
     safeDisposeMaterial(material);
   });
+  if (startHintSprite) {
+      safeDisposeMaterial(startHintSprite.material);
+      if (startHintSprite.material.map) startHintSprite.material.map.dispose();
+  }
   if (earthMesh) {
     earthMesh.geometry.dispose();
     safeDisposeMaterial(earthMesh.material);
@@ -343,6 +488,7 @@ onUnmounted(() => {
   height: 100%;
   display: block;
   outline: none;
+  /* 移除 cursor: none，讓 JS 控制 cursor */
 }
 .scroll-hint {
   position: absolute;
