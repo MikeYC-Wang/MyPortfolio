@@ -359,27 +359,24 @@ const updateCameraDistance = () => {
   camera.position.copy(direction.multiplyScalar(targetDistance).add(controls.target));
 };
 
-// === 重點修改：解決 "太下面" 的問題 ===
+// === 修改後的 setupScrollAnimation ===
 const setupScrollAnimation = () => {
   if (!monitorMesh) {
       console.warn("Monitor mesh not found for zoom effect.");
       return;
   }
 
-  // 1. 計算螢幕的原始座標
-  const screenPos = new THREE.Vector3();
-  monitorMesh.getWorldPosition(screenPos);
+  // 1. 改用 Bounding Box 計算螢幕的「幾何中心」
+  // 這能解決原點在底部導致鏡頭偏低的問題
+  const box = new THREE.Box3().setFromObject(monitorMesh);
+  const screenCenter = new THREE.Vector3();
+  box.getCenter(screenCenter);
 
-  // 2. 【關鍵修正】大幅提高目標點的 Y 軸
-  // 因為模型的原點可能在底部，所以我們要往上加，直到對準螢幕中心
-  screenPos.y += 0.5; 
-
-  // 3. 設定相機結束位置
-  // endPos.z += 0.2: 讓鏡頭停在距離螢幕僅 0.2 的地方 (幾乎貼臉)
-  const endPos = screenPos.clone();
-  endPos.z += 0.2; 
-  // 相機高度也跟著目標高度調整，保持水平視角
-  // 這裡不需要額外加 y，因為 endPos 是 clone 自已經加高過的 screenPos
+  // 2. 設定相機最終位置
+  // 以螢幕中心為基準，往 Z 軸拉出一段距離
+  const endPos = screenCenter.clone();
+  endPos.z += 0.6; // 稍微拉遠一點點 (0.6)，避免穿模穿得太生硬
+  // endPos.y 保持與螢幕中心一致，這樣就是正視螢幕
 
   const tl = gsap.timeline({
     scrollTrigger: {
@@ -406,9 +403,9 @@ const setupScrollAnimation = () => {
       ease: "power2.inOut" 
   })
   .to(controls.target, { 
-      x: screenPos.x, 
-      y: screenPos.y, 
-      z: screenPos.z, 
+      x: screenCenter.x, 
+      y: screenCenter.y, 
+      z: screenCenter.z, 
       duration: 3, 
       ease: "power2.inOut" 
   }, "<")
