@@ -9,6 +9,9 @@ import VscodeScreen from './VscodeScreen.vue';
 
 gsap.registerPlugin(ScrollTrigger);
 
+// 定義事件
+const emit = defineEmits(['enter-site']);
+
 const props = defineProps<{ isDark: boolean }>();
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const containerRef = ref<HTMLDivElement | null>(null);
@@ -20,7 +23,7 @@ let camera: THREE.PerspectiveCamera;
 let renderer: THREE.WebGLRenderer;
 let controls: OrbitControls;
 
-// === HUD (Heads-Up Display) 場景變數 ===
+// HUD 場景變數
 let hudScene: THREE.Scene;
 let hudCamera: THREE.OrthographicCamera;
 
@@ -32,10 +35,11 @@ let extraZoomDistance = 0;
 const MAX_EXTRA_ZOOM = 10;
 const BASE_CAMERA_Z = 6;
 
-// === 互動相關變數 ===
+// 互動與模型變數
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let pcCaseObject: THREE.Object3D | null = null; 
+let monitorMesh: THREE.Mesh | null = null; 
 let startHintSprite: THREE.Sprite | null = null; 
 let isHoveringPc = false;
 
@@ -140,10 +144,8 @@ const initFloatingBackground = async () => {
   }
 };
 
-// === 建立地球紋路粒子球 ===
 const createTexturedEarth = async () => {
     const mapUrl = 'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_specular_2048.jpg';
-    
     const img = new Image();
     img.crossOrigin = "Anonymous";
     
@@ -163,7 +165,8 @@ const createTexturedEarth = async () => {
             const data = imgData.data;
             
             const positions: number[] = [];
-            const particleCount = 25000;
+            const colors: number[] = [];
+            const particleCount = 70000; 
             const radius = 1; 
 
             for (let i = 0; i < particleCount; i++) {
@@ -173,26 +176,30 @@ const createTexturedEarth = async () => {
                 const y = Math.floor(v * height);
                 const index = (y * width + x) * 4; 
                 
-                // === 修復 TypeScript 錯誤：給予預設值 0 ===
                 const brightness = data[index] || 0;
-                
-                if (brightness > 50) {
+                const isLand = brightness > 50;
+
+                if (isLand || Math.random() < 0.15) {
                     const phi = v * Math.PI; 
                     const theta = u * Math.PI * 2; 
-
                     const px = -radius * Math.sin(phi) * Math.cos(theta);
                     const py = radius * Math.cos(phi);
                     const pz = radius * Math.sin(phi) * Math.sin(theta);
-                    
                     positions.push(px, py, pz);
+
+                    const color = new THREE.Color();
+                    if (isLand) color.setHex(0x44aaff); 
+                    else color.setHex(0xffffff); 
+                    colors.push(color.r, color.g, color.b);
                 }
             }
             
             const geometry = new THREE.BufferGeometry();
             geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
             
             const material = new THREE.PointsMaterial({
-                color: 0x44aaff,
+                vertexColors: true,
                 size: 0.008,
                 transparent: true,
                 opacity: 0.8,
@@ -200,9 +207,8 @@ const createTexturedEarth = async () => {
             });
             
             earthMesh = new THREE.Points(geometry, material);
-            earthMesh.scale.set(0.25, 0.25, 0.25);
+            earthMesh.scale.set(0.18, 0.18, 0.18);
             
-            // 初始位置設定 (會在 handleResize 中被覆蓋以適應螢幕)
             const aspect = window.innerWidth / window.innerHeight;
             earthMesh.position.set(-aspect + 0.35, -0.6, 0);
             
@@ -226,7 +232,7 @@ const initScene = async () => {
   renderer = new THREE.WebGLRenderer({ canvas: canvasRef.value, alpha: true, antialias: true });
   renderer.setPixelRatio(window.devicePixelRatio); 
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.autoClear = false; // 重要：允許雙場景疊加
+  renderer.autoClear = false; 
   renderer.shadowMap.enabled = true;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.2;
@@ -238,10 +244,8 @@ const initScene = async () => {
   controls.enablePan = false;
   controls.mouseButtons = { LEFT: null as any, MIDDLE: null as any, RIGHT: THREE.MOUSE.ROTATE };
 
-  // 初始化 HUD
   hudScene = new THREE.Scene();
   const aspect = window.innerWidth / window.innerHeight;
-  // 正交相機範圍：左=-aspect, 右=aspect, 上=1, 下=-1
   hudCamera = new THREE.OrthographicCamera(-aspect, aspect, 1, -1, 0.1, 10);
   hudCamera.position.z = 1;
 
@@ -291,6 +295,8 @@ const initScene = async () => {
       model.traverse((child) => {
         if ((child as THREE.Mesh).isMesh && targetMeshNames.includes(child.name) && screenTexture) {
             const mesh = child as THREE.Mesh;
+            monitorMesh = mesh; 
+            
             mesh.material = new THREE.MeshStandardMaterial({
               map: screenTexture,
               emissive: 0xffffff,
@@ -353,24 +359,65 @@ const updateCameraDistance = () => {
   camera.position.copy(direction.multiplyScalar(targetDistance).add(controls.target));
 };
 
+// === 重點修改：解決 "太下面" 的問題 ===
 const setupScrollAnimation = () => {
+  if (!monitorMesh) {
+      console.warn("Monitor mesh not found for zoom effect.");
+      return;
+  }
+
+  // 1. 計算螢幕的原始座標
+  const screenPos = new THREE.Vector3();
+  monitorMesh.getWorldPosition(screenPos);
+
+  // 2. 【關鍵修正】大幅提高目標點的 Y 軸
+  // 因為模型的原點可能在底部，所以我們要往上加，直到對準螢幕中心
+  screenPos.y += 0.5; 
+
+  // 3. 設定相機結束位置
+  // endPos.z += 0.2: 讓鏡頭停在距離螢幕僅 0.2 的地方 (幾乎貼臉)
+  const endPos = screenPos.clone();
+  endPos.z += 0.2; 
+  // 相機高度也跟著目標高度調整，保持水平視角
+  // 這裡不需要額外加 y，因為 endPos 是 clone 自已經加高過的 screenPos
+
   const tl = gsap.timeline({
     scrollTrigger: {
       trigger: containerRef.value,
       start: "top top",
-      end: "+=1500",
-      scrub: 1,
-      pin: true,
+      end: "+=1500", 
+      scrub: 1, 
+      pin: true, 
+      onLeave: () => {
+          emit('enter-site');
+          if (canvasRef.value) canvasRef.value.style.pointerEvents = 'none';
+      },
+      onEnterBack: () => {
+          if (canvasRef.value) canvasRef.value.style.pointerEvents = 'auto';
+      }
     }
   });
-  tl.to(camera.position, { x: 0, y: 0.8, z: 0.8, duration: 5, ease: "power2.inOut" })
-    .to(camera.position, { z: -2, duration: 1, ease: "none" })
-    .to(canvasRef.value, { opacity: 0, duration: 0.5 }, "<0.5");
+
+  tl.to(camera.position, { 
+      x: endPos.x, 
+      y: endPos.y, 
+      z: endPos.z, 
+      duration: 3, 
+      ease: "power2.inOut" 
+  })
+  .to(controls.target, { 
+      x: screenPos.x, 
+      y: screenPos.y, 
+      z: screenPos.z, 
+      duration: 3, 
+      ease: "power2.inOut" 
+  }, "<")
+  .to(canvasRef.value, { opacity: 0, duration: 0.5 }, "-=0.5");
 };
 
+// ... (以下標準功能保持不變) ...
 const onMouseMove = (event: MouseEvent) => {
     if (!canvasRef.value) return;
-    
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
@@ -388,7 +435,6 @@ const onMouseMove = (event: MouseEvent) => {
 
 const onClick = () => {
     if (!isHoveringPc || !pcCaseObject || !vscodeScreenRef.value) return;
-    
     if (vscodeScreenRef.value.isPoweredOn) return;
 
     vscodeScreenRef.value.turnOn();
@@ -430,7 +476,6 @@ const animate = () => {
   });
 
   if (earthMesh) earthMesh.rotation.y += 0.002; 
-  
   if (screenTexture) screenTexture.needsUpdate = true;
 
   if (startHintSprite && startHintSprite.visible) {
@@ -446,7 +491,6 @@ const animate = () => {
   }
 };
 
-// === 修改後的 Resize 邏輯 ===
 const handleResize = () => {
   const width = window.innerWidth;
   const height = window.innerHeight;
@@ -456,16 +500,12 @@ const handleResize = () => {
     camera.aspect = aspect;
     camera.updateProjectionMatrix();
     
-    // 更新 HUD 正交相機範圍
     hudCamera.left = -aspect;
     hudCamera.right = aspect;
     hudCamera.updateProjectionMatrix();
 
-    // === 動態更新地球位置 ===
     if (earthMesh) {
-       // X軸：設定為最左側 (-aspect) 再加上一點邊距 (+0.35)
        earthMesh.position.x = -aspect + 0.35;
-       // Y軸：設定為稍高於底部 (-0.6)，避免太貼近邊緣
        earthMesh.position.y = -0.6; 
     }
 
