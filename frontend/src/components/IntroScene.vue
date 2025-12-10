@@ -30,18 +30,18 @@ const BASE_CAMERA_Z = 6;
 // === 互動相關變數 ===
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
-let pcCaseMesh: THREE.Mesh | null = null; // 儲存主機 Mesh
-let startHintSprite: THREE.Sprite | null = null; // 儲存"點擊開機"的 Sprite
-let isHoveringPc = false; // 是否滑鼠停在主機上
+let pcCaseObject: THREE.Object3D | null = null; 
+let startHintSprite: THREE.Sprite | null = null; 
+let isHoveringPc = false;
 
-// ... (程式語言圖示定義保持不變)
+// 程式語言圖示
 const languages = [
   { name: 'HTML5', color: '#E34F26', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/html5/html5-original.svg' },
   { name: 'CSS3', color: '#1572B6', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-original.svg' },
   { name: 'JavaScript', color: '#F7DF1E', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg' },
   { name: 'TypeScript', color: '#3178C6', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg' },
   { name: 'Vue.js', color: '#4FC08D', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vuejs/vuejs-original.svg' },
-  { name: 'Python', color: '#3776AB', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg' },
+  { name: 'Python', color: '#3776AB', icon: '/python-logo.png' },
   { name: 'Node.js', color: '#339933', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg' },
   { name: 'React', color: '#61DAFB', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg' },
   { name: 'Git', color: '#F05032', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/git/git-original.svg' },
@@ -85,7 +85,6 @@ const createLabelTexture = (text: string, color: string, iconUrl: string): Promi
   });
 };
 
-// === 新增：建立純文字提示貼圖 ("點擊開機") ===
 const createHintTexture = (text: string): THREE.CanvasTexture => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -95,24 +94,21 @@ const createHintTexture = (text: string): THREE.CanvasTexture => {
     canvas.height = height;
 
     if (ctx) {
-        // 背景 (圓角矩形)
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'; // 半透明黑底
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; 
         ctx.beginPath();
         ctx.roundRect(10, 10, width - 20, height - 20, 30);
         ctx.fill();
         
-        // 邊框
         ctx.strokeStyle = '#00ffff';
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 6;
         ctx.stroke();
 
-        // 文字
-        ctx.font = 'bold 60px "Microsoft JhengHei", Arial, sans-serif';
+        ctx.font = 'bold 50px "Microsoft JhengHei", Arial, sans-serif';
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.shadowColor = '#00ffff';
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 10;
         ctx.fillText(text, width / 2, height / 2);
     }
     
@@ -223,14 +219,17 @@ const initScene = async () => {
       model.position.z = -center.z * scale;
       model.rotation.y = 0; 
 
+      scene.add(model);
+      model.updateMatrixWorld(true);
+
       const targetMeshNames = ['Monitor_Cube_2']; 
-      const pcCaseName = 'Support_Cube002'; // 主機名稱
+      // === 修正後的正確主機名稱 ===
+      const pcCaseName = 'Computer_Cube'; 
 
       model.traverse((child) => {
-        if ((child as THREE.Mesh).isMesh) {
-          const mesh = child as THREE.Mesh;
-
-          if (targetMeshNames.includes(child.name) && screenTexture) {
+        // 螢幕貼圖
+        if ((child as THREE.Mesh).isMesh && targetMeshNames.includes(child.name) && screenTexture) {
+            const mesh = child as THREE.Mesh;
             mesh.material = new THREE.MeshStandardMaterial({
               map: screenTexture,
               emissive: 0xffffff,
@@ -240,44 +239,32 @@ const initScene = async () => {
               metalness: 0.5,
               side: THREE.FrontSide,
             });
-          }
+        }
 
-          // === 處理主機 & 建立提示 ===
-          if (child.name === pcCaseName) {
-            pcCaseMesh = mesh;
+        // 主機互動設定
+        if (child.name === pcCaseName) {
+            pcCaseObject = child;
             
-            // 建立"點擊開機"的飄浮 Sprite
+            const caseBox = new THREE.Box3().setFromObject(child);
+            const caseCenter = new THREE.Vector3();
+            caseBox.getCenter(caseCenter);
+
             const hintTexture = createHintTexture("點擊開機 👆");
             const hintMaterial = new THREE.SpriteMaterial({ 
                 map: hintTexture, 
                 transparent: true,
-                depthTest: false, // 確保文字總是在最上層（可選）
+                depthTest: false,
                 depthWrite: false 
             });
             startHintSprite = new THREE.Sprite(hintMaterial);
+            startHintSprite.scale.set(1.5, 0.375, 1); 
             
-            // 設定提示標籤的大小和位置 (放在主機上方)
-            startHintSprite.scale.set(1.5, 0.375, 1); // 比例要配合 Canvas 寬高 (512x128 = 4:1)
-            
-            // 取得主機的中心點或頂部位置
-            // 這裡直接使用 mesh 的位置並稍微往上加
-            // 由於 model 有縮放，這裡的位置計算需要是相對的
-            // 我們可以直接將 Sprite 加為 scene 的子物件，並設定絕對位置
-            // 或是加為主機的子物件 (但縮放會被影響)，這裡選擇加到 scene 並手動對位
-            
-            // 計算主機在世界座標的位置
-            const box = new THREE.Box3().setFromObject(mesh);
-            const topY = box.max.y;
-            const centerX = (box.min.x + box.max.x) / 2;
-            const centerZ = (box.min.z + box.max.z) / 2;
-
-            startHintSprite.position.set(centerX, topY + 0.5, centerZ);
+            // 設定在主機正上方
+            startHintSprite.position.set(caseCenter.x, caseBox.max.y + 0.3, caseCenter.z);
             scene.add(startHintSprite);
-          }
         }
       });
 
-      scene.add(model);
       setupScrollAnimation(); 
     },
     undefined,
@@ -322,50 +309,40 @@ const setupScrollAnimation = () => {
     .to(canvasRef.value, { opacity: 0, duration: 0.5 }, "<0.5");
 };
 
-// === Raycaster 互動邏輯 ===
 const onMouseMove = (event: MouseEvent) => {
     if (!canvasRef.value) return;
     
-    // 計算滑鼠座標 (NDC -1 到 +1)
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-    if (pcCaseMesh && camera) {
+    if (pcCaseObject && camera) {
         raycaster.setFromCamera(mouse, camera);
-        
-        // 偵測是否與主機相交
-        const intersects = raycaster.intersectObject(pcCaseMesh);
+        const intersects = raycaster.intersectObject(pcCaseObject, true);
         const isInteracting = intersects.length > 0;
         
-        // 如果狀態改變 (進入或離開主機)
         if (isInteracting !== isHoveringPc) {
             isHoveringPc = isInteracting;
-            // 重要：改變滑鼠游標形狀
             canvasRef.value.style.cursor = isHoveringPc ? 'pointer' : 'default';
         }
     }
 };
 
 const onClick = () => {
-    // 只有在滑鼠停留在主機上時才觸發
-    if (!isHoveringPc || !pcCaseMesh || !vscodeScreenRef.value) return;
+    if (!isHoveringPc || !pcCaseObject || !vscodeScreenRef.value) return;
     
     if (vscodeScreenRef.value.isPoweredOn) return;
 
-    // 1. 開機
     vscodeScreenRef.value.turnOn();
     
-    // 2. 主機震動反饋
-    gsap.to(pcCaseMesh.scale, {
-        x: pcCaseMesh.scale.x * 0.95,
-        y: pcCaseMesh.scale.y * 0.95,
-        z: pcCaseMesh.scale.z * 0.95,
+    gsap.to(pcCaseObject.scale, {
+        x: pcCaseObject.scale.x * 0.95,
+        y: pcCaseObject.scale.y * 0.95,
+        z: pcCaseObject.scale.z * 0.95,
         duration: 0.1,
         yoyo: true,
         repeat: 1
     });
 
-    // 3. 隱藏提示標籤
     if (startHintSprite) {
         gsap.to(startHintSprite.material, {
             opacity: 0,
@@ -376,7 +353,6 @@ const onClick = () => {
         });
     }
     
-    // 4. 重置游標
     if (canvasRef.value) canvasRef.value.style.cursor = 'default';
     isHoveringPc = false;
 };
@@ -397,11 +373,9 @@ const animate = () => {
   if (earthMesh) earthMesh.rotation.y += 0.001; 
   if (screenTexture) screenTexture.needsUpdate = true;
 
-  // === 提示標籤的飄浮動畫 ===
   if (startHintSprite && startHintSprite.visible) {
-      // 讓它上下輕微浮動
       const time = Date.now() * 0.003;
-      startHintSprite.position.y += Math.sin(time) * 0.002;
+      startHintSprite.position.y += Math.sin(time) * 0.0005; 
   }
 
   if (renderer && scene && camera) renderer.render(scene, camera);
@@ -428,7 +402,6 @@ onMounted(async () => {
   animate();
   window.addEventListener('resize', handleResize);
   window.addEventListener('wheel', handleWheel, { passive: false });
-  // 加入事件監聽
   window.addEventListener('mousemove', onMouseMove);
   window.addEventListener('click', onClick);
 });
@@ -445,7 +418,6 @@ onUnmounted(() => {
   if (controls) controls.dispose();
   if (screenTexture) screenTexture.dispose();
   
-  // 清理資源
   floatingElements.forEach(el => {
     const material = el.sprite.material;
     if (!Array.isArray(material) && material.map) material.map.dispose();
@@ -488,7 +460,6 @@ onUnmounted(() => {
   height: 100%;
   display: block;
   outline: none;
-  /* 移除 cursor: none，讓 JS 控制 cursor */
 }
 .scroll-hint {
   position: absolute;
