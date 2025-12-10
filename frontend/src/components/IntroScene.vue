@@ -14,15 +14,20 @@ const canvasRef = ref<HTMLCanvasElement | null>(null);
 const containerRef = ref<HTMLDivElement | null>(null);
 const vscodeScreenRef = ref<InstanceType<typeof VscodeScreen> & { turnOn: () => Promise<void>, isPoweredOn: boolean } | null>(null);
 
+// 主要場景變數
 let scene: THREE.Scene;
 let camera: THREE.PerspectiveCamera;
 let renderer: THREE.WebGLRenderer;
 let controls: OrbitControls;
+
+// === HUD (Heads-Up Display) 場景變數 ===
+let hudScene: THREE.Scene;
+let hudCamera: THREE.OrthographicCamera;
+
 let animationId: number;
 let screenTexture: THREE.CanvasTexture | null = null;
 let floatingElements: { sprite: THREE.Sprite; velocity: THREE.Vector3 }[] = [];
 let earthMesh: THREE.Points | null = null;
-const earthRadius = 0.5;
 let extraZoomDistance = 0;
 const MAX_EXTRA_ZOOM = 10;
 const BASE_CAMERA_Z = 6;
@@ -41,7 +46,7 @@ const languages = [
   { name: 'JavaScript', color: '#F7DF1E', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg' },
   { name: 'TypeScript', color: '#3178C6', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg' },
   { name: 'Vue.js', color: '#4FC08D', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vuejs/vuejs-original.svg' },
-  { name: 'Python', color: '#3776AB', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg' },
+  { name: 'Python', color: '#3776AB', icon: '/python-logo.png' },
   { name: 'Node.js', color: '#339933', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg' },
   { name: 'React', color: '#61DAFB', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg' },
   { name: 'Git', color: '#F05032', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/git/git-original.svg' },
@@ -135,28 +140,78 @@ const initFloatingBackground = async () => {
   }
 };
 
-const createParticleEarth = () => {
-    const particles = 20000;
-    const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(particles * 3);
-    for (let i = 0; i < particles; i++) {
-        const phi = Math.acos(1 - 2 * Math.random());
-        const theta = 2 * Math.PI * Math.random();
-        positions[i * 3] = earthRadius * Math.sin(phi) * Math.cos(theta);
-        positions[i * 3 + 1] = earthRadius * Math.sin(phi) * Math.sin(theta);
-        positions[i * 3 + 2] = earthRadius * Math.cos(phi);
-    }
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const material = new THREE.PointsMaterial({
-        color: 0x00ffff,
-        size: 0.01,
-        blending: THREE.AdditiveBlending,
-        transparent: true,
-        sizeAttenuation: true
+// === 建立地球紋路粒子球 ===
+const createTexturedEarth = async () => {
+    const mapUrl = 'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_specular_2048.jpg';
+    
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    
+    return new Promise<void>((resolve, reject) => {
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) { reject(); return; }
+            
+            const width = img.width;
+            const height = img.height;
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0);
+            
+            const imgData = ctx.getImageData(0, 0, width, height);
+            const data = imgData.data;
+            
+            const positions: number[] = [];
+            const particleCount = 25000;
+            const radius = 1; 
+
+            for (let i = 0; i < particleCount; i++) {
+                const u = Math.random();
+                const v = Math.random();
+                const x = Math.floor(u * width);
+                const y = Math.floor(v * height);
+                const index = (y * width + x) * 4; 
+                
+                // === 修復 TypeScript 錯誤：給予預設值 0 ===
+                const brightness = data[index] || 0;
+                
+                if (brightness > 50) {
+                    const phi = v * Math.PI; 
+                    const theta = u * Math.PI * 2; 
+
+                    const px = -radius * Math.sin(phi) * Math.cos(theta);
+                    const py = radius * Math.cos(phi);
+                    const pz = radius * Math.sin(phi) * Math.sin(theta);
+                    
+                    positions.push(px, py, pz);
+                }
+            }
+            
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            
+            const material = new THREE.PointsMaterial({
+                color: 0x44aaff,
+                size: 0.008,
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending,
+            });
+            
+            earthMesh = new THREE.Points(geometry, material);
+            earthMesh.scale.set(0.25, 0.25, 0.25);
+            
+            // 初始位置設定 (會在 handleResize 中被覆蓋以適應螢幕)
+            const aspect = window.innerWidth / window.innerHeight;
+            earthMesh.position.set(-aspect + 0.35, -0.6, 0);
+            
+            hudScene.add(earthMesh);
+            resolve();
+        };
+        img.onerror = reject;
+        img.src = mapUrl;
     });
-    earthMesh = new THREE.Points(geometry, material);
-    earthMesh.position.set(-4, -1.5, -2); 
-    scene.add(earthMesh);
 };
 
 const initScene = async () => {
@@ -171,6 +226,7 @@ const initScene = async () => {
   renderer = new THREE.WebGLRenderer({ canvas: canvasRef.value, alpha: true, antialias: true });
   renderer.setPixelRatio(window.devicePixelRatio); 
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.autoClear = false; // 重要：允許雙場景疊加
   renderer.shadowMap.enabled = true;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.2;
@@ -181,6 +237,13 @@ const initScene = async () => {
   controls.enableZoom = false; 
   controls.enablePan = false;
   controls.mouseButtons = { LEFT: null as any, MIDDLE: null as any, RIGHT: THREE.MOUSE.ROTATE };
+
+  // 初始化 HUD
+  hudScene = new THREE.Scene();
+  const aspect = window.innerWidth / window.innerHeight;
+  // 正交相機範圍：左=-aspect, 右=aspect, 上=1, 下=-1
+  hudCamera = new THREE.OrthographicCamera(-aspect, aspect, 1, -1, 0.1, 10);
+  hudCamera.position.z = 1;
 
   const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
   scene.add(ambientLight);
@@ -193,7 +256,7 @@ const initScene = async () => {
   scene.add(fillLight);
 
   await initFloatingBackground();
-  createParticleEarth(); 
+  await createTexturedEarth(); 
 
   if (vscodeScreenRef.value && vscodeScreenRef.value.canvasRef) {
     const screenCanvas = vscodeScreenRef.value.canvasRef;
@@ -223,11 +286,9 @@ const initScene = async () => {
       model.updateMatrixWorld(true);
 
       const targetMeshNames = ['Monitor_Cube_2']; 
-      // === 修正後的正確主機名稱 ===
       const pcCaseName = 'Computer_Cube'; 
 
       model.traverse((child) => {
-        // 螢幕貼圖
         if ((child as THREE.Mesh).isMesh && targetMeshNames.includes(child.name) && screenTexture) {
             const mesh = child as THREE.Mesh;
             mesh.material = new THREE.MeshStandardMaterial({
@@ -241,7 +302,6 @@ const initScene = async () => {
             });
         }
 
-        // 主機互動設定
         if (child.name === pcCaseName) {
             pcCaseObject = child;
             
@@ -259,7 +319,6 @@ const initScene = async () => {
             startHintSprite = new THREE.Sprite(hintMaterial);
             startHintSprite.scale.set(1.5, 0.375, 1); 
             
-            // 設定在主機正上方
             startHintSprite.position.set(caseCenter.x, caseBox.max.y + 0.3, caseCenter.z);
             scene.add(startHintSprite);
         }
@@ -370,7 +429,8 @@ const animate = () => {
     if (el.sprite.position.y < -10) el.sprite.position.y = 10;
   });
 
-  if (earthMesh) earthMesh.rotation.y += 0.001; 
+  if (earthMesh) earthMesh.rotation.y += 0.002; 
+  
   if (screenTexture) screenTexture.needsUpdate = true;
 
   if (startHintSprite && startHintSprite.visible) {
@@ -378,14 +438,38 @@ const animate = () => {
       startHintSprite.position.y += Math.sin(time) * 0.0005; 
   }
 
-  if (renderer && scene && camera) renderer.render(scene, camera);
+  if (renderer && scene && camera && hudScene && hudCamera) {
+      renderer.clear();
+      renderer.render(scene, camera);
+      renderer.clearDepth();
+      renderer.render(hudScene, hudCamera);
+  }
 };
 
+// === 修改後的 Resize 邏輯 ===
 const handleResize = () => {
-  if (camera && renderer) {
-    camera.aspect = window.innerWidth / window.innerHeight;
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const aspect = width / height;
+
+  if (camera && renderer && hudCamera) {
+    camera.aspect = aspect;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    
+    // 更新 HUD 正交相機範圍
+    hudCamera.left = -aspect;
+    hudCamera.right = aspect;
+    hudCamera.updateProjectionMatrix();
+
+    // === 動態更新地球位置 ===
+    if (earthMesh) {
+       // X軸：設定為最左側 (-aspect) 再加上一點邊距 (+0.35)
+       earthMesh.position.x = -aspect + 0.35;
+       // Y軸：設定為稍高於底部 (-0.6)，避免太貼近邊緣
+       earthMesh.position.y = -0.6; 
+    }
+
+    renderer.setSize(width, height);
   }
 };
 

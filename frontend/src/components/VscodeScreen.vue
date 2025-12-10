@@ -59,6 +59,14 @@ const colors = {
 };
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
+const pythonIcon = new Image();
+pythonIcon.src = '/python-logo.png';
+let isPythonIconLoaded = false;
+
+pythonIcon.onload = () => {
+  isPythonIconLoaded = true;
+  if (isPoweredOn) draw();
+};
 
 // 動畫狀態
 let currentLineIndex = 0;
@@ -125,9 +133,15 @@ const drawInterface = (ctx: CanvasRenderingContext2D) => {
     ctx.stroke();
 
     // Python Logo (Py)
+if (isPythonIconLoaded) {
+    const iconSize = 36;
+    const iconY = (tabHeight - iconSize) / 2; 
+    ctx.drawImage(pythonIcon, tab2X + 25, iconY, iconSize, iconSize);
+  } else {
     ctx.font = '36px "Segoe UI Emoji", "Segoe UI", Arial, sans-serif';
-    ctx.fillStyle = '#3776AB'; // Python Blue
+    ctx.fillStyle = '#3776AB'; 
     ctx.fillText('Py', tab2X + 30, tabHeight / 2);
+  }
 
     // 檔名文字
     ctx.font = '36px "Segoe UI", Arial, sans-serif'; 
