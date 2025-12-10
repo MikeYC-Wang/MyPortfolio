@@ -315,7 +315,7 @@ const initScene = async () => {
             const caseCenter = new THREE.Vector3();
             caseBox.getCenter(caseCenter);
 
-            const hintTexture = createHintTexture("點擊開機 👆");
+            const hintTexture = createHintTexture("➪點擊開機");
             const hintMaterial = new THREE.SpriteMaterial({ 
                 map: hintTexture, 
                 transparent: true,
@@ -359,7 +359,6 @@ const updateCameraDistance = () => {
   camera.position.copy(direction.multiplyScalar(targetDistance).add(controls.target));
 };
 
-// === 修改後的 setupScrollAnimation ===
 const setupScrollAnimation = () => {
   if (!monitorMesh) {
       console.warn("Monitor mesh not found for zoom effect.");
@@ -412,7 +411,6 @@ const setupScrollAnimation = () => {
   .to(canvasRef.value, { opacity: 0, duration: 0.5 }, "-=0.5");
 };
 
-// ... (以下標準功能保持不變) ...
 const onMouseMove = (event: MouseEvent) => {
     if (!canvasRef.value) return;
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
