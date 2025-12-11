@@ -315,7 +315,7 @@ const initScene = async () => {
             const caseCenter = new THREE.Vector3();
             caseBox.getCenter(caseCenter);
 
-            const hintTexture = createHintTexture("➪點擊開機");
+            const hintTexture = createHintTexture("➪ 點擊開機");
             const hintMaterial = new THREE.SpriteMaterial({ 
                 map: hintTexture, 
                 transparent: true,

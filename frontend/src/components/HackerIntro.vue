@@ -36,10 +36,6 @@ const introSequence = [
     cn: "歡迎來到我的網站！",
     en: "Welcome to my website!"
   },
-  {
-    cn: "希望你會喜歡我的作品",
-    en: "I hope you will like my project."
-  }
 ];
 
 const logs = [
