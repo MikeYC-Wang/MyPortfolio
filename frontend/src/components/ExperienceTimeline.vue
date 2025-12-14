@@ -63,8 +63,8 @@ const experiences = [
   {
     title: '自動化程式設計實習生 (Intern)',
     company: '華碩電腦 (ASUS)',
-    duration: '2024.06 - 至今',
-    icon: 'fa-solid fa-laptop-code', // 💻 程式相關 icon
+    duration: '2024.06 - 2025.06',
+    icon: 'fa-solid fa-laptop-code',
     details: [
       '隸屬於自動化程式設計一部，深入了解自動化流程如何提升產線效率。',
       '培養解決實務問題的能力，將所學技能應用於實際專案。',
@@ -75,7 +75,7 @@ const experiences = [
     title: '值班經理 / 訓練員',
     company: '摩斯漢堡 (基隆)',
     duration: '2019.04 - 2025.05',
-    icon: 'fa-solid fa-burger', // 🍔 餐飲相關 icon
+    icon: 'fa-solid fa-burger',
     details: [
       '從內外場基礎做起，晉升為值班經理，具備團隊管理與人員調度能力。',
       '考取訓練員資格，負責新進員工的教育訓練與 SOP 指導。',
@@ -95,7 +95,7 @@ const experiences = [
 }
 
 .timeline-section.dark-mode {
-  --bg-color: #1a1a1a;
+  --bg-color: #0d1117;
   --text-color: #d4d4d4;
   --line-color: #444;
   --card-bg: #2c2c2c;
@@ -176,11 +176,11 @@ h2 {
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
   position: relative;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  border-left: 5px solid var(--primary, #007bff);
+  border-left: 5px solid #e0cda9;
 }
 
 /* ✨ 懸浮效果 ✨ */
-.timeline-content:hover {
+.timeline-item:hover .timeline-content {
   transform: translateY(-10px) scale(1.02);
   box-shadow: 0 20px 40px -10px var(--shadow-color, rgba(0, 123, 255, 0.3));
 }
@@ -210,7 +210,7 @@ h2 {
 }
 
 .timeline-section.dark-mode .timeline-content {
-  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  box-shadow: 0 10px 30px rgba(180, 174, 174, 0.4);
 }
 
 /* === 時間軸 Icon 圓點 === */
@@ -218,13 +218,13 @@ h2 {
   position: absolute;
   width: 50px;
   height: 50px;
-  background: var(--primary, #007bff);
-  color: #fff;
+  background: linear-gradient(135deg, #c7b299 0%, #e0cda9 100%);
+  color: #ffffff;
   border: 4px solid var(--bg-color, #f8f9fa);
   border-radius: 50%;
   top: 15px;
   z-index: 2;
-  box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.2);
+  box-shadow: 0 0 0 4px rgba(199, 178, 153, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -233,8 +233,9 @@ h2 {
 }
 
 .timeline-item:hover .timeline-icon-dot {
-  transform: scale(1.2) rotate(360deg); /* 滑鼠經過卡片時，中間的圖示也會轉動放大 */
-  background: #ff4560; /* 互動變色 */
+  transform: scale(1.2) rotate(360deg);
+  background: linear-gradient(135deg, #f0ba56 0%, #c7b299 100%);
+  color: #3e2723;
 }
 
 /* 調整點點位置 */
@@ -295,7 +296,7 @@ h2 {
 
 .list-icon {
   margin-top: 5px; /* 對齊文字頂部 */
-  color: var(--primary, #007bff);
+  color: var(#e0cda9);
   font-size: 0.8rem;
 }
 
