@@ -17,13 +17,13 @@ let animationId: number;
 const COLOR_DARK_BG = 0x1a1a1a;     // 深色模式：深灰底
 const COLOR_STAR_DARK = 0xe0cda9;   // 深色模式：淺奶茶色星星
 
-const COLOR_LIGHT_BG = 0xfdfbf7;    // 亮色模式：米白底
+const COLOR_LIGHT_BG = 0xfdfbf7;    // 亮色模式：米白底F
 const COLOR_STAR_LIGHT = 0x8d6e63;  // 亮色模式：深咖啡星星
 
 const initThree = () => {
   if (!containerRef.value) return;
 
-  // 1. 場景
+  // 1. 場景F
   scene = new THREE.Scene();
   scene.background = new THREE.Color(props.isDark ? COLOR_DARK_BG : COLOR_LIGHT_BG);
   

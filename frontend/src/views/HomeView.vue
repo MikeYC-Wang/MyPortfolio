@@ -24,10 +24,8 @@ const { isDark, initTheme } = useTheme();
 
 // === 進入網站後的處理 ===
 const handleEnterSite = async () => {
-  // 1. 設定狀態為已進入
   isEntered.value = true;
   
-  // 2. 等待 DOM 更新後，平滑捲動到 About Me
   await nextTick();
   const aboutSection = document.getElementById('about');
   if (aboutSection) {
@@ -107,7 +105,7 @@ onMounted(async () => {
       </section>
 
       <footer class="footer">
-        <p>© 2025 Mikey Wang.</p>
+        <p>©2025 Mike Wang.</p>
       </footer>
     </div>
   </div>
@@ -121,21 +119,26 @@ onMounted(async () => {
 .main-content {
   position: relative; 
   z-index: 20; 
-  margin-top: 100vh; 
+  
+  /* === 🚀 關鍵修改在這裡：增加高度 === */
+  /* 從 100vh 改為 300vh (或更高) */
+  /* 這代表使用者要滾動 3 個螢幕的高度，內容才會上來 */
+  margin-top: 300vh; 
+  
   min-height: 100vh;
   
-  /* === 關鍵修正 1: 預設隱藏 === */
+  /* 預設隱藏 */
   opacity: 0;
-  visibility: hidden; /* 確保不會擋到滑鼠滾輪事件 */
+  visibility: hidden;
   pointer-events: none;
-  transition: opacity 1.5s ease-in-out, visibility 0s 0s; /* visibility 立即切換 */
+  transition: opacity 1.5s ease-in-out, visibility 0s 0s;
 
-  /* === 關鍵修正 2: 預設為深色背景 (防止白色閃爍) === */
+  /* 預設深色背景 */
   background-color: #0d1117; 
   color: #e0e0e0;
 }
 
-/* 當進入網站後，才顯示內容 */
+/* 內容顯示狀態 */
 .main-content.visible {
   opacity: 1;
   visibility: visible;
@@ -150,11 +153,11 @@ onMounted(async () => {
 .bg-gray { background-color: #1a1a1a; color: #e0e0e0; }
 .bg-dark { background-color: #0d1117; color: #e0e0e0; }
 
-/* 淺色模式覆蓋 (Light Mode Overrides) */
+/* 淺色模式覆蓋 */
 .main-content.light-mode .bg-gray { background-color: #f8f9fa; color: #333; }
 .main-content.light-mode .bg-dark { background-color: #ffffff; color: #333; }
 
-/* === Layout & Components (保持原樣，僅微調顏色繼承) === */
+/* === Layout & Components === */
 .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
 .content-grid { display: grid; grid-template-columns: 1fr; gap: 40px; }
 @media (min-width: 900px) { .content-grid { grid-template-columns: 400px 1fr; align-items: start; } .sticky-chart { position: sticky; top: 20px; } }

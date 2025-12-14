@@ -175,14 +175,14 @@ h2 {
   border-radius: 16px;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
   position: relative;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* 彈性過渡 */
-  border-left: 5px solid var(--primary, #007bff); /* 左側裝飾線 */
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border-left: 5px solid var(--primary, #007bff);
 }
 
 /* ✨ 懸浮效果 ✨ */
 .timeline-content:hover {
-  transform: translateY(-10px) scale(1.02); /* 向上浮起並微放大 */
-  box-shadow: 0 20px 40px -10px var(--shadow-color, rgba(0, 123, 255, 0.3)); /* 加深陰影 */
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 20px 40px -10px var(--shadow-color, rgba(0, 123, 255, 0.3));
 }
 
 /* 卡片箭頭 */
