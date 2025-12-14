@@ -1,5 +1,5 @@
 <template>
-  <div class="about-section" :class="{ 'dark-mode': isDark }">
+  <div class="about-section" :class="{ 'light-mode': !isDark }">
     <div class="container">
       <div class="section-header" v-observe>
         <h2>關於我 (About Me)</h2>
@@ -34,7 +34,6 @@
 </template>
 
 <script setup lang="ts">
-// 自定義指令 v-observe：當元素進入畫面時加入 'visible' class
 const vObserve = {
   mounted: (el: HTMLElement) => {
     const observer = new IntersectionObserver((entries) => {
@@ -53,79 +52,57 @@ defineProps<{ isDark: boolean }>();
 </script>
 
 <style scoped>
+/* === 核心修正：預設深色樣式 (Dark Mode Default) === */
 .about-section {
   padding: 80px 20px;
-  background: var(--bg-color, #f8f9fa);
-  color: var(--text-color, #333);
-  transition: all 0.3s ease;
+  background-color: #0d1117; /* 預設深色背景 */
+  color: #e0e0e0;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.about-section.dark-mode {
-  --bg-color: #1a1a1a;
-  --text-color: #e0e0e0;
-  --card-bg: #2c2c2c;
-  --highlight-color: #ffd700;
+/* Light Mode 覆蓋 */
+.about-section.light-mode {
+  background-color: #f8f9fa; /* 淺色背景 */
+  color: #333;
 }
 
-.container {
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-.section-header {
-  text-align: center;
-  margin-bottom: 50px;
-  opacity: 0;
-  transform: translateY(30px);
-  transition: all 0.8s ease;
-}
-
-.section-header.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-h2 { font-size: 2.5rem; margin-bottom: 10px; }
+.container { max-width: 1000px; margin: 0 auto; }
+.section-header { text-align: center; margin-bottom: 50px; opacity: 0; transform: translateY(30px); transition: all 0.8s ease; }
+.section-header.visible { opacity: 1; transform: translateY(0); }
+h2 { font-size: 2.5rem; margin-bottom: 10px; color: inherit; }
 .subtitle { color: #888; font-size: 1.1rem; }
+.content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
 
-.content-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
-}
-
+/* === 卡片樣式 (預設深色) === */
 .card {
-  background: var(--card-bg, #fff);
+  background-color: #1e1e1e; /* 深灰卡片 */
+  color: #e0e0e0;
   padding: 30px;
   border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
   opacity: 0;
-  transform: translateY(50px); /* 初始位置在下方 */
+  transform: translateY(50px);
   transition: all 0.8s ease;
+  border: 1px solid #333;
 }
 
-/* 動畫觸發後 */
-.card.visible {
-  opacity: 1;
-  transform: translateY(0);
+/* Light Mode 卡片 */
+.about-section.light-mode .card {
+  background-color: #fff;
+  color: #333;
+  border: none;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
 }
 
-.card h3 {
-  margin-top: 0;
-  border-bottom: 2px solid #007bff;
-  padding-bottom: 10px;
-  margin-bottom: 20px;
-  display: inline-block;
-}
+.card.visible { opacity: 1; transform: translateY(0); }
+.card h3 { margin-top: 0; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 20px; display: inline-block; }
 
 .cert-list { list-style: none; padding: 0; }
 .cert-list li { margin-bottom: 12px; padding-left: 20px; position: relative; }
-.cert-list li::before {
-  content: '✓'; color: #007bff; position: absolute; left: 0; font-weight: bold;
-}
-.highlight { color: var(--highlight-color, #d63384); font-weight: bold; }
+.cert-list li::before { content: '✓'; color: #007bff; position: absolute; left: 0; font-weight: bold; }
 
-@media (max-width: 768px) {
-  .content-grid { grid-template-columns: 1fr; }
-}
+.highlight { color: #ffd700; font-weight: bold; } /* 深色模式強調色 (黃) */
+.about-section.light-mode .highlight { color: #d63384; } /* 淺色模式強調色 (粉紅) */
+
+@media (max-width: 768px) { .content-grid { grid-template-columns: 1fr; } }
 </style>
