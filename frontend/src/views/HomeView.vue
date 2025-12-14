@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import axios from 'axios';
 
 // === 引入所有元件 ===
@@ -17,23 +17,46 @@ interface Project {
 
 const projects = ref<Project[]>([]);
 const errorMsg = ref('');
-const isEntered = ref(false); // 控制是否已穿過 3D 場景
+const isEntered = ref(false);
 
-// 簡單的深色模式判斷 (預設為深色以符合 Hacker 風格)
-const isDark = computed(() => {
+// === 關鍵修正：改用 ref + MutationObserver 來真正監聽深色模式 ===
+const isDark = ref(true); // 預設先給 True (讓它一開始就是黑的)
+
+let observer: MutationObserver | null = null;
+
+const updateTheme = () => {
   if (typeof document !== 'undefined') {
-    return document.body.classList.contains('theme-dark');
+    // 檢查 body 是否有 theme-dark class
+    isDark.value = document.body.classList.contains('theme-dark');
   }
-  return true; 
-});
+};
 
-// 當 IntroScene 發出 enter-site 事件時觸發
 const handleEnterSite = () => {
   isEntered.value = true;
 };
 
-// 獲取專案列表
 onMounted(async () => {
+  // 1. 初始化檢查主題
+  updateTheme();
+
+  // 2. 建立監聽器：當 body 的 class 改變時，自動更新 isDark
+  if (typeof document !== 'undefined') {
+    observer = new MutationObserver(updateTheme);
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+  }
+
+  // 3. 強制瀏覽器忘記捲動位置，回到最上方
+  if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+  }
+  window.scrollTo(0, 0);
+  await nextTick();
+  window.scrollTo(0, 0);
+
+  // 4. 獲取專案
   try {
     const response = await axios.get('/api/projects');
     projects.value = response.data;
@@ -41,6 +64,11 @@ onMounted(async () => {
     console.error(err);
     errorMsg.value = '無法連線到後端，請檢查 FastAPI 是否有在跑？';
   }
+});
+
+// 記得在組件銷毀時移除監聽器，避免效能問題
+onUnmounted(() => {
+  if (observer) observer.disconnect();
 });
 </script>
 
@@ -50,7 +78,7 @@ onMounted(async () => {
       <IntroScene :isDark="isDark" @enter-site="handleEnterSite" />
     </div>
 
-    <div class="main-content">
+    <div class="main-content" :class="{ 'dark-mode': isDark }">
       
       <section id="about">
         <AboutMe :isDark="isDark" />
@@ -111,34 +139,42 @@ onMounted(async () => {
 .page-wrapper {
   width: 100%;
   position: relative;
+  background-color: #0d1117; /* 預設底色為黑，避免載入閃爍 */
 }
 
 /* === 3D 場景容器 === */
 .scene-wrapper {
-  position: fixed; /* 固定在視窗 */
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100vh;
-  z-index: 10; /* 最上層 */
+  z-index: 10;
   transition: opacity 0.5s ease;
 }
 
-/* 當進入網站後，讓 3D 場景不阻擋滑鼠事件 (變成背景) */
 .scene-wrapper.background-mode {
   pointer-events: none;
-  /* 選擇性：如果想讓背景變暗或消失，可以加 opacity: 0.1 */
 }
 
 /* === 主要內容區域 === */
 .main-content {
   position: relative;
-  z-index: 20; /* 蓋在 3D 場景之上 */
-  /* 重要：留出 100vh 的空間給 3D 捲動特效，讓使用者先捲完 3D 再看到內容 */
+  z-index: 20;
   margin-top: 100vh; 
-  background: var(--bg-color, #f8f9fa); /* 給背景色遮住 3D 場景 */
   min-height: 100vh;
-  box-shadow: 0 -10px 30px rgba(0,0,0,0.1); /* 頂部陰影 */
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  
+  /* 預設樣式 (Light Mode) */
+  background-color: #f8f9fa;
+  color: #333;
+}
+
+/* 深色模式樣式 (Dark Mode) */
+.main-content.dark-mode {
+  background-color: #0d1117; /* GitHub Dark 背景色 */
+  color: #e0e0e0;
 }
 
 /* === 佈局樣式 === */
@@ -154,14 +190,12 @@ onMounted(async () => {
   gap: 40px;
 }
 
-/* 大螢幕時並排顯示技能與專案 */
 @media (min-width: 900px) {
   .content-grid {
     grid-template-columns: 400px 1fr;
     align-items: start;
   }
   
-  /* 讓圖表在捲動時稍微固定 */
   .sticky-chart {
     position: sticky;
     top: 20px;
@@ -171,7 +205,7 @@ onMounted(async () => {
 .section-title {
   font-size: 2rem;
   margin-bottom: 30px;
-  color: #333;
+  color: inherit;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -185,6 +219,7 @@ onMounted(async () => {
 }
 
 .project-card {
+  /* 預設淺色卡片 */
   background: #fff;
   border-radius: 12px;
   padding: 20px;
@@ -193,9 +228,17 @@ onMounted(async () => {
   border: 1px solid rgba(0,0,0,0.05);
 }
 
+/* 深色模式下的專案卡片 */
+.main-content.dark-mode .project-card {
+  background: #1e1e1e;
+  border-color: #444;
+  color: #e0e0e0;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
 .project-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 25px rgba(0,123,255,0.15);
   border-color: #007bff;
 }
 
@@ -212,6 +255,10 @@ onMounted(async () => {
   color: #007bff;
 }
 
+.main-content.dark-mode .card-header h3 {
+  color: #4dabf7;
+}
+
 .folder-icon {
   color: #ffd700;
   font-size: 1.2rem;
@@ -222,12 +269,15 @@ onMounted(async () => {
   font-size: 0.95rem;
   line-height: 1.6;
   margin-bottom: 15px;
-  /* 限制行數：加入標準屬性以相容未來標準 */
   display: -webkit-box;
   -webkit-line-clamp: 3;
-  line-clamp: 3; /* 標準屬性 */
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.main-content.dark-mode .desc {
+  color: #aaa;
 }
 
 .tags {
@@ -245,13 +295,25 @@ onMounted(async () => {
   font-weight: 500;
 }
 
+.main-content.dark-mode .tech-tag {
+  background: #333;
+  color: #ccc;
+}
+
 /* === 頁尾 === */
 .footer {
   text-align: center;
   padding: 40px 20px;
-  background: #2c3e50;
-  color: #fff;
+  background: #f1f1f1;
+  color: #333;
   margin-top: 60px;
+  border-top: 1px solid #ddd;
+}
+
+.main-content.dark-mode .footer {
+  background: #000;
+  color: #fff;
+  border-top: 1px solid #333;
 }
 
 .social-links {
@@ -262,7 +324,7 @@ onMounted(async () => {
 }
 
 .social-links a {
-  color: #fff;
+  color: inherit;
   font-size: 1.5rem;
   transition: color 0.3s;
 }
