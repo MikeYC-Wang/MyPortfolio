@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import VueApexCharts from 'vue3-apexcharts';
 import axios from 'axios';
 import type { ApexOptions } from 'apexcharts';
@@ -19,12 +19,16 @@ const props = defineProps<{
 
 const skills = ref<Skill[]>([]);
 const loading = ref(true);
-const currentType = ref<ChartType>('bar'); // 預設使用長條圖 (GitHub 風格)
 
-// === 🎨 配色變數 ===
-const COLOR_PRIMARY_DARK = '#e0cda9';
-const COLOR_PRIMARY_LIGHT = '#5d4037';
-const COLORS = ['#FFD700', '#FF4560', '#00E396', '#008FFB', '#775DD0', '#546E7A', '#26a69a', '#D10CE8'];
+// === 1. 設定預設圖表類型為 'donut' (圓餅圖) ===
+const currentType = ref<ChartType>('donut'); 
+
+// === 🎨 配色變數 (用於漸層) ===
+const COLORS = ['#00FFFF', '#FFD700', '#00E396', '#775DD0', '#FF4560', '#546E7A', '#26a69a', '#D10CE8'];
+// 深色模式下的漸變高亮色 (科技感)
+const GRADIENT_COLORS_DARK = ['#00C9FF', '#92FE9D', '#FF5F6D', '#7474BF', '#FF8D7E', '#78909C', '#4DB6AC', '#E040FB']; 
+// 淺色模式下的漸變暗色
+const GRADIENT_COLORS_LIGHT = ['#0077B6', '#1E8449', '#CB4335', '#5DADE2', '#C0392B', '#455A64', '#00695C', '#8E24AA']; 
 
 // 根據主題取得文字顏色
 const textColor = computed(() => props.isDark ? '#e0cda9' : '#5d4037');
@@ -36,18 +40,15 @@ const series = computed(() => {
   if (skills.value.length === 0) return [];
 
   if (currentType.value === 'bar') {
-    // === GitHub 風格堆疊長條圖 ===
-    // 每個技能是一個獨立的 Series，每個 Series 只有一個數據點 (橫向堆疊)
+    // GitHub 風格堆疊長條圖 (每個技能是一個獨立 Series)
     return skills.value.map(skill => ({
       name: skill.category,
       data: [skill.score]
     }));
-  } else if (currentType.value === 'donut' || currentType.value === 'radialBar') {
-    // === 圓餅圖 / 徑向圖 ===
-    // Series 是一個單純的數字陣列
+  } else {
+    // 圓餅圖 / 徑向圖：Series 是一個單純的數字陣列
     return skills.value.map(skill => skill.score);
   }
-  return [];
 });
 
 // ------------------------------------
@@ -67,10 +68,11 @@ const chartOptions = computed<ApexOptions>(() => {
       mode: isDark ? 'dark' : 'light',
       palette: 'palette1' 
     },
-    colors: COLORS, // 使用自訂多彩色系
+    colors: COLORS, // 基礎色盤
     legend: {
       position: 'bottom',
-      labels: { colors: isDark ? '#fff' : '#333' }
+      labels: { colors: isDark ? '#fff' : '#333' },
+      itemMargin: { horizontal: 10, vertical: 5 }
     },
     dataLabels: {
       style: {
@@ -81,75 +83,88 @@ const chartOptions = computed<ApexOptions>(() => {
     },
     tooltip: {
       theme: isDark ? 'dark' : 'light'
+    },
+    // === 全域漸層設定 (主要針對圓餅圖生效) ===
+    fill: {
+        type: currentType.value === 'donut' ? 'gradient' : 'solid',
+        gradient: {
+          shade: isDark ? 'dark' : 'light',
+          type: 'horizontal',
+          shadeIntensity: 0.5,
+          gradientToColors: isDark ? GRADIENT_COLORS_DARK : GRADIENT_COLORS_LIGHT,
+          inverseColors: true,
+          opacityFrom: 1,
+          opacityTo: 1,
+          stops: [0, 100]
+        }
     }
   };
 
-  // === 1. GitHub 風格堆疊長條圖 (Stacked Bar) ===
+  // === 1. 圓餅圖 (Donut) ===
+  if (currentType.value === 'donut') {
+    return {
+      ...baseOptions,
+      chart: { type: 'donut' },
+      labels: skills.value.map(s => s.category),
+      stroke: {
+        show: true,
+        colors: [isDark ? '#1a1a1a' : '#fff'], // 區塊間的間隔線
+        width: 2
+      },
+      plotOptions: {
+        pie: {
+          donut: {
+            size: '65%', // 中空大小
+            labels: {
+              show: true,
+              name: { color: isDark ? '#fff' : '#333' },
+              value: { color: isDark ? '#e0cda9' : '#5d4037' },
+              total: {
+                show: true,
+                label: 'Skills',
+                color: isDark ? '#fff' : '#333',
+                formatter: () => `${skills.value.length} 項`
+              }
+            }
+          }
+        }
+      }
+    };
+  }
+
+  // === 2. GitHub 風格堆疊長條圖 (Bar) ===
   if (currentType.value === 'bar') {
     return {
       ...baseOptions,
       chart: {
         type: 'bar',
-        stacked: true, // 開啟堆疊
-        stackType: '100%', // 設定為 100% 佔比模式
-        toolbar: { show: false },
-        background: 'transparent'
+        stacked: true, 
+        stackType: '100%', 
+        toolbar: { show: false }
       },
       plotOptions: {
         bar: {
-          horizontal: true, // 橫向
-          borderRadius: 8, // 圓角
-          barHeight: '40%', // 調整條狀高度，讓它看起來像進度條
+          horizontal: true, 
+          borderRadius: 8, 
+          barHeight: '40%', 
         }
       },
       xaxis: {
-        categories: ['Skill Distribution'], // 只有一個分類
-        labels: { show: false }, // 隱藏 X 軸標籤
+        categories: ['Skill Distribution'], 
+        labels: { show: false }, 
         axisBorder: { show: false },
         axisTicks: { show: false }
       },
-      yaxis: {
-        show: false // 隱藏 Y 軸
-      },
+      yaxis: { show: false },
       grid: {
-        show: false, // 隱藏格線
+        show: false, 
         padding: { top: 0, bottom: 0, left: 0, right: 0 }
       },
       stroke: {
         width: 1,
-        colors: [isDark ? '#2c2c2c' : '#fff'] // 堆疊區塊間的間隔線
-      }
-    };
-  }
-
-  // === 2. 圓餅圖 (Donut) ===
-  if (currentType.value === 'donut') {
-    return {
-      ...baseOptions,
-      chart: {
-        type: 'donut',
+        colors: [isDark ? '#2c2c2c' : '#fff'] 
       },
-      labels: skills.value.map(s => s.category),
-      plotOptions: {
-        pie: {
-          donut: {
-            size: '65%',
-            labels: {
-              show: true,
-              total: {
-                show: true,
-                label: 'Total Skills',
-                color: isDark ? '#fff' : '#333',
-              }
-            }
-          }
-        }
-      },
-      stroke: {
-        show: true,
-        colors: [isDark ? '#1a1a1a' : '#fff'],
-        width: 2
-      }
+      fill: { type: 'solid' } // 長條圖通常用實色比較好看
     };
   }
   
@@ -157,9 +172,7 @@ const chartOptions = computed<ApexOptions>(() => {
   if (currentType.value === 'radialBar') {
      return {
       ...baseOptions,
-      chart: {
-        type: 'radialBar',
-      },
+      chart: { type: 'radialBar' },
       labels: skills.value.map(s => s.category),
       plotOptions: {
         radialBar: {
@@ -172,7 +185,8 @@ const chartOptions = computed<ApexOptions>(() => {
             value: { color: isDark ? '#e0cda9' : '#333' }
           }
         }
-      }
+      },
+      fill: { type: 'gradient' } // 徑向圖也適合漸層
     };
   }
 
@@ -211,21 +225,20 @@ const setType = (type: ChartType) => {
         <i class="fa-solid fa-chart-pie" style="margin-right: 8px;"></i> 技能分佈分析
       </h3>
       
-      <!-- 圖表切換按鈕 -->
       <div class="controls">
-        <button 
-          @click="setType('bar')" 
-          :class="{ active: currentType === 'bar' }"
-          title="堆疊長條圖"
-        >
-          <span class="icon"><i class="fa-solid fa-chart-bar"></i></span> Bar
-        </button>
         <button 
           @click="setType('donut')" 
           :class="{ active: currentType === 'donut' }"
           title="圓餅圖"
         >
           <span class="icon"><i class="fa-solid fa-circle-notch"></i></span> Donut
+        </button>
+        <button 
+          @click="setType('bar')" 
+          :class="{ active: currentType === 'bar' }"
+          title="堆疊長條圖"
+        >
+          <span class="icon"><i class="fa-solid fa-chart-bar"></i></span> Bar
         </button>
         <button 
           @click="setType('radialBar')" 
@@ -242,14 +255,10 @@ const setType = (type: ChartType) => {
     </div>
 
     <div v-else class="chart-wrapper">
-      <!-- 
-        重要：當切換圖表類型時，ApexCharts 有時需要重新 mounting
-        這裡使用 :key="currentType" 強制 Vue 重新渲染元件 
-      -->
       <VueApexCharts
         :key="currentType"
         :type="currentType === 'radialBar' ? 'radialBar' : (currentType === 'bar' ? 'bar' : 'donut')"
-        height="300"
+        height="320"
         :options="chartOptions"
         :series="series"
       />
@@ -260,7 +269,7 @@ const setType = (type: ChartType) => {
 <style scoped>
 .chart-container {
   width: 100%;
-  max-width: 600px; /* 加寬一點以適應橫條圖 */
+  max-width: 600px;
   margin: 0 auto;
   background: var(--card-bg, rgba(255, 255, 255, 0.1));
   backdrop-filter: blur(10px);
@@ -326,8 +335,10 @@ const setType = (type: ChartType) => {
 }
 
 .chart-wrapper {
-  min-height: 300px;
+  min-height: 320px;
   width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 .loading-state {
@@ -339,7 +350,7 @@ const setType = (type: ChartType) => {
   gap: 10px;
 }
 
-/* 深色模式適配 (如果父元件有傳入變數) */
+/* 深色模式適配 */
 :deep(.apexcharts-legend-text) {
   font-family: inherit !important;
 }
