@@ -222,9 +222,10 @@ onMounted(async () => {
   font-size: 0.95rem;
   line-height: 1.6;
   margin-bottom: 15px;
-  /* 限制行數 */
+  /* 限制行數：加入標準屬性以相容未來標準 */
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3; /* 標準屬性 */
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
