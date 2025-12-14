@@ -58,13 +58,25 @@ const vObserve = {
 
 defineProps<{ isDark: boolean }>();
 
-// === 真實數據 (加入 icon 欄位) ===
+// === 真實數據 ===
 const experiences = [
+  {
+    title: '全端工程師 (Full Stack Engineer)',
+    company: '方達科技股份有限公司',
+    duration: '2025.07 - 至今',
+    icon: 'fa-solid fa-globe',
+    details: [
+      '使用 ASP.NET Web Form、.NET Core 、C# 進行開發，負責前後端系統建置。',
+      '維護與管理 MS SQL Server 資料庫，優化查詢效能。',
+      '使用 SVN 進行版本控制，確保團隊協作順暢。',
+      '參與影像串流與 GIS 相關功能開發。'
+    ]
+  },
   {
     title: '自動化程式設計實習生 (Intern)',
     company: '華碩電腦 (ASUS)',
     duration: '2024.06 - 2025.06',
-    icon: 'fa-solid fa-laptop-code',
+    icon: 'fa-solid fa-code',
     details: [
       '隸屬於自動化程式設計一部，深入了解自動化流程如何提升產線效率。',
       '培養解決實務問題的能力，將所學技能應用於實際專案。',
@@ -121,7 +133,7 @@ h2 {
 }
 
 .timeline-container {
-  max-width: 900px;
+  max-width: 1050px;
   margin: 0 auto;
   position: relative;
 }
@@ -176,7 +188,17 @@ h2 {
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
   position: relative;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  /* border-left: 5px solid #e0cda9; */
+}
+
+/* 左側項目 (Odd)：顯示左邊框 */
+.timeline-item:nth-child(odd) .timeline-content {
   border-left: 5px solid #e0cda9;
+}
+
+/* 右側項目 (Even)：顯示右邊框 */
+.timeline-item:nth-child(even) .timeline-content {
+  border-right: 5px solid #e0cda9;
 }
 
 /* ✨ 懸浮效果 ✨ */
@@ -229,12 +251,12 @@ h2 {
   align-items: center;
   justify-content: center;
   font-size: 1.4rem;
-  transition: transform 0.3s ease;
+  transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease;
 }
 
 .timeline-item:hover .timeline-icon-dot {
   transform: scale(1.2) rotate(360deg);
-  background: linear-gradient(135deg, #f0ba56 0%, #c7b299 100%);
+  background: linear-gradient(135deg, #f7cd7e 0%, #c7b299 100%);
   color: #3e2723;
 }
 
@@ -331,6 +353,12 @@ h2 {
     right: auto;
     border-right: 10px solid var(--card-bg, #fff);
     border-left: none;
+  }
+  /* 手機版統一顯示左邊框 (因為時間軸在左邊) */
+  .timeline-item:nth-child(odd) .timeline-content,
+  .timeline-item:nth-child(even) .timeline-content {
+    border-left: 5px solid #e0cda9;
+    border-right: none;
   }
 }
 </style>
