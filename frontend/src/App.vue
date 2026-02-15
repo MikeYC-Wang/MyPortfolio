@@ -23,7 +23,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <HackerIntro @intro-complete="handleIntroComplete" />
+  <HackerIntro 
+    v-if="!isIntroFinished" 
+    @intro-complete="handleIntroComplete" 
+  />
 
   <div class="app-wrapper">
     
@@ -38,6 +41,7 @@ onMounted(() => {
           <RouterLink to="/">首頁</RouterLink>
           <RouterLink to="/lab">特效實驗室</RouterLink>
           <RouterLink to="/admin">後台管理</RouterLink>
+          <RouterLink to="/blog">技術筆記</RouterLink>
         </nav>
       </div>
 

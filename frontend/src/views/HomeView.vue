@@ -7,7 +7,7 @@ import { useTheme } from '@/composables/useTheme';
 import IntroScene from '@/components/IntroScene.vue';
 import AboutMe from '@/components/AboutMe.vue';
 import ExperienceTimeline from '@/components/ExperienceTimeline.vue';
-import RadarChart from '@/components/RadarChart.vue';
+// import RadarChart from '@/components/RadarChart.vue';
 
 interface Project {
   id: number;

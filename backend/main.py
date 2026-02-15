@@ -9,7 +9,7 @@ from sqlalchemy.sql import func
 # ==========================================
 # 1. 資料庫連線設定
 # ==========================================
-# ⚠️ 請再次確認密碼是否正確
+# 請再次確認密碼是否正確
 SQLALCHEMY_DATABASE_URL = "postgresql://postgres:Day25143@localhost:5432/portfolio_db"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
@@ -50,7 +50,7 @@ class PostModel(Base):
     is_published = Column(Boolean, default=True)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
-# D. 技能 (雷達圖用 ✨)
+# D. 技能 (雷達圖用)
 class SkillModel(Base):
     __tablename__ = "skills"
     id = Column(Integer, primary_key=True, index=True)
@@ -87,16 +87,24 @@ class CodeSnippetSchema(CodeSnippetCreate):
     class Config:
         from_attributes = True
 
-# 文章 Schema
+# 文章 Schema (讀取用)
 class PostSchema(BaseModel):
     id: int
     title: str
     content: Optional[str] = None
     cover_image: Optional[str] = None
+    created_at: Optional[object] = None
     class Config:
         from_attributes = True
 
-# 技能 Schema (雷達圖用 ✨)
+# 文章 Schema (新增用)
+class PostCreate(BaseModel):
+    title: str
+    content: str
+    cover_image: Optional[str] = None
+    is_published: bool = True
+
+# 技能 Schema (雷達圖用)
 class SkillSchema(BaseModel):
     category: str
     score: int
@@ -137,13 +145,28 @@ def create_snippet(snippet: CodeSnippetCreate, db: Session = Depends(get_db)):
     db.refresh(db_snippet)
     return db_snippet
 
-# --- 技能 API (新增 ✨) ---
+# --- 技能 API ---
 @app.get("/api/skills", response_model=List[SkillSchema])
 def get_skills(db: Session = Depends(get_db)):
     # 按照 skill_order 排序
     return db.query(SkillModel).order_by(SkillModel.skill_order).all()
 
-# --- 文章 API (預留) ---
+# --- 文章 API ---
 @app.get("/api/posts", response_model=List[PostSchema])
 def get_posts(db: Session = Depends(get_db)):
     return db.query(PostModel).filter(PostModel.is_published == True).all()
+
+@app.get("/api/posts/{post_id}", response_model=PostSchema)
+def get_post(post_id: int, db: Session = Depends(get_db)):
+    post = db.query(PostModel).filter(PostModel.id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="文章不存在")
+    return post
+
+@app.post("/api/posts", response_model=PostSchema)
+def create_post(post: PostCreate, db: Session = Depends(get_db)):
+    db_post = PostModel(**post.dict())
+    db.add(db_post)
+    db.commit()
+    db.refresh(db_post)
+    return db_post

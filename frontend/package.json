@@ -17,9 +17,12 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@types/markdown-it": "^14.1.2",
     "@types/three": "^0.181.0",
     "apexcharts": "^5.3.6",
     "axios": "^1.13.2",
+    "highlight.js": "^11.11.1",
+    "markdown-it": "^14.1.1",
     "pinia": "^3.0.3",
     "three": "^0.181.2",
     "vue": "^3.5.22",

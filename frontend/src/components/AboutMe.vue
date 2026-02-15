@@ -3,7 +3,7 @@
     <div class="container">
       <div class="section-header" v-observe>
         <h2>關於我 (About Me)</h2>
-        <div class="subtitle">汪宇晨 (Mikey) | 2002 Born</div>
+        <div class="subtitle">汪宇晨 (Mike) | 2002 Born</div>
       </div>
 
       <div class="content-grid">

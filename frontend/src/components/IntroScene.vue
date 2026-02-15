@@ -260,7 +260,7 @@ const initScene = async () => {
   scene.add(fillLight);
 
   await initFloatingBackground();
-  await createTexturedEarth(); 
+  // await createTexturedEarth(); 
 
   if (vscodeScreenRef.value && vscodeScreenRef.value.canvasRef) {
     const screenCanvas = vscodeScreenRef.value.canvasRef;
