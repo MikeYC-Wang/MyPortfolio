@@ -95,7 +95,7 @@
       </div>
 
       <div v-else class="snippets-grid">
-        <div v-for="item in snippets" :key="item.id" class="snippet-card">
+        <div v-for="item in snippets" :key="item.id" class="snippet-card"@click="router.push(`/lab/edit/${item.id}`)">
           <div class="card-header">
             <div class="dots">
               <span class="dot red"></span>

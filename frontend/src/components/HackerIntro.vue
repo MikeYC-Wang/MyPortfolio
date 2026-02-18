@@ -29,10 +29,6 @@ const introSequence = [
     en: "Pure Enjoyment Of Coding!"
   },
   {
-    cn: "喜歡主動去學習新的事物",
-    en: "I like to take the initiative to learn new things."
-  },
-  {
     cn: "歡迎來到我的網站！",
     en: "Welcome to my website!"
   },

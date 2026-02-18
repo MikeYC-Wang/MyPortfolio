@@ -53,6 +53,20 @@
   outline: none;
   width: 300px;
 }
+
+.input-desc {
+  background: transparent;
+  border: none;
+  color: var(--text-sub);
+  font-size: 0.85rem;
+  outline: none;
+  width: 100%;
+}
+
+.input-desc:focus, .input-title:focus {
+  border-bottom: 1px solid var(--milk-tea);
+}
+
 .input-title::placeholder { color: var(--text-sub); opacity: 0.5; }
 
 .btn-save {

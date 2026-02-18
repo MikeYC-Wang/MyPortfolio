@@ -17,6 +17,11 @@ const router = createRouter({
       name: 'lab-new', 
       component: LabEditorView 
     },
+    { 
+      path: '/lab/edit/:id',
+      name: 'lab-edit', 
+      component: LabEditorView 
+    },
     { path: '/blog', name: 'blog', component: BlogView },
     { path: '/blog/:id', name: 'post-detail', component: PostDetailView },
     { path: '/login', name: 'login', component: LoginView },

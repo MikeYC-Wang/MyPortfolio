@@ -353,3 +353,29 @@ def delete_post(post_id: int, db: Session = Depends(get_db)):
     db.delete(db_post)
     db.commit()
     return {"message": "Deleted successfully"}
+
+# 1. 取得單一作品 (用於編輯模式載入資料)
+@app.get("/api/snippets/{snippet_id}", response_model=CodeSnippetSchema)
+def get_snippet(snippet_id: int, db: Session = Depends(get_db)):
+    snippet = db.query(CodeSnippetModel).filter(CodeSnippetModel.id == snippet_id).first()
+    if not snippet:
+        raise HTTPException(status_code=404, detail="作品不存在")
+    return snippet
+
+# 2. 更新現有作品 (PUT)
+@app.put("/api/snippets/{snippet_id}", response_model=CodeSnippetSchema)
+def update_snippet(snippet_id: int, snippet_data: CodeSnippetCreate, db: Session = Depends(get_db)):
+    db_snippet = db.query(CodeSnippetModel).filter(CodeSnippetModel.id == snippet_id).first()
+    if not db_snippet:
+        raise HTTPException(status_code=404, detail="作品不存在")
+    
+    # 更新欄位
+    db_snippet.title = snippet_data.title
+    db_snippet.description = snippet_data.description
+    db_snippet.html_code = snippet_data.html_code
+    db_snippet.css_code = snippet_data.css_code
+    db_snippet.js_code = snippet_data.js_code
+    
+    db.commit()
+    db.refresh(db_snippet)
+    return db_snippet
