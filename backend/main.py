@@ -3,6 +3,7 @@ import shutil
 import uuid
 from fastapi import FastAPI, Depends, HTTPException, File, UploadFile
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, TIMESTAMP
@@ -96,6 +97,13 @@ class PostCreate(BaseModel):
     cover_image: Optional[str] = None
     is_published: bool = True
 
+# ✨ 新增：更新文章用的 Schema (跟 Create 一樣，但為了語意清楚分開定義)
+class PostUpdate(BaseModel):
+    title: str
+    content: str
+    cover_image: Optional[str] = None
+    is_published: bool = True
+
 class SkillSchema(BaseModel):
     category: str
     score: int
@@ -107,13 +115,19 @@ class SkillSchema(BaseModel):
 # ==========================================
 app = FastAPI()
 
-# ✨ 設定圖片上傳資料夾
+# 允許跨域 (CORS)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 UPLOAD_DIR = "static/uploads"
-# 如果資料夾不存在，就自動建立
 if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
 
-# ✨ 掛載靜態檔案路由 (這樣瀏覽器才能透過 /static/xxx 看到圖片)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 def get_db():
@@ -125,21 +139,18 @@ def get_db():
 
 @app.get("/")
 def read_root():
-    return {"message": "全端核心 V2.3 (含技能) 啟動成功！"}
+    return {"message": "全端核心 V2.4 (管理升級版) 啟動成功！"}
 
-# --- 圖片上傳 API (新增 ✨) ---
+# --- 圖片上傳 API ---
 @app.post("/api/upload")
 async def upload_image(file: UploadFile = File(...)):
-    # 1. 產生唯一的檔名 (避免檔名重複覆蓋)
     file_ext = file.filename.split(".")[-1]
     file_name = f"{uuid.uuid4()}.{file_ext}"
     file_path = f"{UPLOAD_DIR}/{file_name}"
     
-    # 2. 將檔案存入硬碟
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     
-    # 3. 回傳圖片的網址 (前端拿到這個網址後，存進 cover_image)
     return {"url": f"/static/uploads/{file_name}"}
 
 # --- 專案 API ---
@@ -165,11 +176,16 @@ def create_snippet(snippet: CodeSnippetCreate, db: Session = Depends(get_db)):
 def get_skills(db: Session = Depends(get_db)):
     return db.query(SkillModel).order_by(SkillModel.skill_order).all()
 
-# --- 文章 API ---
+# --- 部落格文章 API (完整 CRUD) ---
+
+# 1. 取得所有文章
 @app.get("/api/posts", response_model=List[PostSchema])
 def get_posts(db: Session = Depends(get_db)):
-    return db.query(PostModel).filter(PostModel.is_published == True).all()
+    # 這裡改成回傳「所有」文章(包含隱藏的)，方便後台管理，或者你可以另外寫一個 api/admin/posts
+    # 為了簡單，目前先回傳全部，並依 ID 倒序排列 (新文章在前)
+    return db.query(PostModel).order_by(PostModel.id.desc()).all()
 
+# 2. 取得單篇文章
 @app.get("/api/posts/{post_id}", response_model=PostSchema)
 def get_post(post_id: int, db: Session = Depends(get_db)):
     post = db.query(PostModel).filter(PostModel.id == post_id).first()
@@ -177,6 +193,7 @@ def get_post(post_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="文章不存在")
     return post
 
+# 3. 新增文章
 @app.post("/api/posts", response_model=PostSchema)
 def create_post(post: PostCreate, db: Session = Depends(get_db)):
     db_post = PostModel(**post.dict())
@@ -184,3 +201,31 @@ def create_post(post: PostCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_post)
     return db_post
+
+# 4. ✨ 更新文章 (PUT)
+@app.put("/api/posts/{post_id}", response_model=PostSchema)
+def update_post(post_id: int, post: PostUpdate, db: Session = Depends(get_db)):
+    db_post = db.query(PostModel).filter(PostModel.id == post_id).first()
+    if not db_post:
+        raise HTTPException(status_code=404, detail="文章不存在")
+    
+    # 更新欄位
+    db_post.title = post.title
+    db_post.content = post.content
+    db_post.cover_image = post.cover_image
+    db_post.is_published = post.is_published
+    
+    db.commit()
+    db.refresh(db_post)
+    return db_post
+
+# 5. ✨ 刪除文章 (DELETE)
+@app.delete("/api/posts/{post_id}")
+def delete_post(post_id: int, db: Session = Depends(get_db)):
+    db_post = db.query(PostModel).filter(PostModel.id == post_id).first()
+    if not db_post:
+        raise HTTPException(status_code=404, detail="文章不存在")
+    
+    db.delete(db_post)
+    db.commit()
+    return {"message": "刪除成功"}
