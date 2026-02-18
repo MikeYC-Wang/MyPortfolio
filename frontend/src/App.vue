@@ -39,7 +39,7 @@ onMounted(() => {
       <div class="nav-container">
         <nav>
           <RouterLink to="/">首頁</RouterLink>
-          <RouterLink to="/lab">特效實驗室</RouterLink>
+          <RouterLink to="/lab">靈感碎片</RouterLink>
           <RouterLink to="/blog">個人部落格</RouterLink>
           <RouterLink to="/admin">後台管理</RouterLink>
         </nav>
