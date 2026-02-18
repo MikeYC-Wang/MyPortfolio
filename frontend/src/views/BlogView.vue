@@ -19,6 +19,14 @@ const getExcerpt = (text: string) => {
   return text.slice(0, 100).replace(/[#*`]/g, '') + '...';
 };
 
+const getImageUrl = (path: string) => {
+  if (!path) return '';
+  // 如果已經是完整的網址 (http開頭)，就直接回傳
+  if (path.startsWith('http')) return path;
+  // 否則補上後端網址
+  return `http://127.0.0.1:8000${path}`;
+};
+
 onMounted(async () => {
   try {
     const res = await axios.get('/api/posts');
@@ -39,7 +47,11 @@ onMounted(async () => {
 
     <div v-else class="post-grid">
       <div v-for="post in posts" :key="post.id" class="post-card">
-        <div v-if="post.cover_image" class="post-cover" :style="{ backgroundImage: `url(${post.cover_image})` }"></div>
+        <div 
+        v-if="post.cover_image" 
+        class="post-cover" 
+        :style="{ backgroundImage: `url(${getImageUrl(post.cover_image)})` }"
+        ></div>
         <div v-else class="post-cover placeholder">
             <i class="fa-solid fa-code"></i>
         </div>

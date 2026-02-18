@@ -37,9 +37,8 @@ const handleFileUpload = async (event: Event) => {
           'Content-Type': 'multipart/form-data'
         }
       });
-      
-      // 後端會回傳 { "url": "/static/uploads/xxx.jpg" }
-      postForm.value.cover_image = res.data.url; 
+
+      postForm.value.cover_image = `http://127.0.0.1:8000${res.data.url}`;
     } catch (error) {
       console.error('上傳失敗', error);
       alert('圖片上傳失敗，請檢查後端是否啟動');
