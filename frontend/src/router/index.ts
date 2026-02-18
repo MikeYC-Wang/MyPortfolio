@@ -1,9 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import LabView from '@/views/LabView.vue'
-// 這裡補上了缺少的引入
 import BlogView from '@/views/BlogView.vue'
 import PostDetailView from '@/views/PostDetailView.vue'
+import AdminView from '@/views/AdminView.vue' // 引入後台管理頁面
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -17,7 +17,7 @@ const router = createRouter({
       path: '/lab',
       name: 'lab',
       component: LabView
-    }, // 這裡補上了逗號，解決 TS(1005) 錯誤
+    },
     {
       path: '/blog',
       name: 'blog',
@@ -27,6 +27,11 @@ const router = createRouter({
       path: '/blog/:id',
       name: 'post-detail',
       component: PostDetailView
+    },
+    {
+      path: '/admin',
+      name: 'admin',
+      component: AdminView
     }
   ]
 })
