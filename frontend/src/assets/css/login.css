@@ -1,53 +1,42 @@
 /* frontend/src/assets/css/login.css */
 
-/* 定義變數：奶茶色系 */
-:root {
-  --milk-tea: #E6CCB2;       /* 主奶茶色 */
-  --milk-tea-dark: #D4B595;  /* 深一點的奶茶色 (Hover用) */
-  --bg-dark: #121212;        /* 背景黑 */
-  --card-bg: #1E1E1E;        /* 卡片深灰 */
-  --text-main: #F0F0F0;      /* 主文字白 */
-  --text-sub: #AAAAAA;       /* 副標題灰 */
-  --danger: #ff6b6b;         /* 錯誤紅 */
-}
-
-/* 全頁背景 */
 .login-container {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: var(--bg-dark);
-  color: var(--text-main);
-  /* 加入一點點漸層讓背景不那麼死板 */
-  background-image: radial-gradient(circle at center, #1a1a1a 0%, #0d0d0d 100%);
+  background-color: var(--bg-color);
+  background-image: var(--bg-gradient);
+  color: var(--text-color);
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* 登入卡片主體 */
 .login-box {
   width: 100%;
-  max-width: 400px;
+  max-width: 400px; /* 限制最大寬度 */
   padding: 3rem 2.5rem;
   background-color: var(--card-bg);
-  border-radius: 16px; /* 圓角 */
-  
-  /* 關鍵：左側奶茶色裝飾線 (模仿首頁卡片風格) */
+  border-radius: 16px;
   border-left: 6px solid var(--milk-tea);
   
-  /* 關鍵：卡片陰影 */
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  /* ✨ 關鍵修改：使用白色光暈陰影 (變數已在 main.css 調整) */
+  box-shadow: 0 0 25px var(--shadow-color);
   
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+  
+  /* 讓內容物垂直排列並置中/撐滿 */
+  align-items: stretch; 
 }
 
 .login-box:hover {
-  transform: translateY(-5px); /* 滑鼠移上去稍微浮起 */
+  transform: translateY(-5px);
+  /* Hover 時陰影更強烈一點 */
+  box-shadow: 0 0 35px var(--shadow-color);
 }
 
-/* 標題區塊 */
 .login-header {
   text-align: center;
   margin-bottom: 1rem;
@@ -57,13 +46,13 @@
   font-size: 3rem;
   color: var(--milk-tea);
   margin-bottom: 1rem;
-  filter: drop-shadow(0 0 5px rgba(230, 204, 178, 0.5));
+  filter: drop-shadow(0 0 5px var(--milk-tea-dark));
 }
 
 .login-header h2 {
   font-size: 1.8rem;
   font-weight: 700;
-  color: var(--text-main);
+  color: var(--text-color);
   margin: 0;
   letter-spacing: 2px;
 }
@@ -74,11 +63,11 @@
   margin-top: 5px;
 }
 
-/* 表單區域 */
 .login-form {
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
+  width: 100%; /* 確保表單撐滿卡片 */
 }
 
 .input-group {
@@ -86,45 +75,77 @@
   flex-direction: column;
   gap: 0.5rem;
   text-align: left;
+  width: 100%; /* 確保群組撐滿 */
 }
 
 .input-group label {
   font-size: 0.9rem;
-  color: var(--milk-tea); /* 標籤用奶茶色 */
+  color: var(--milk-tea);
   font-weight: bold;
   letter-spacing: 1px;
 }
 
-/* 輸入框樣式 */
+/* 一般輸入框 */
 .input-group input {
   width: 100%;
+  box-sizing: border-box; /* 包含 padding 和 border */
   padding: 12px 15px;
-  background-color: #2A2A2A;
-  border: 1px solid #444;
-  border-radius: 8px;
-  color: #fff;
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text-color);
   font-size: 1rem;
+  border-radius: 8px;
   transition: all 0.3s ease;
   outline: none;
 }
 
-.input-group input::placeholder {
-  color: #666;
+/* --- 密碼輸入框特殊處理 (包含眼睛) --- */
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
 }
 
-/* 輸入框 Focus 特效 */
+.password-wrapper input {
+  width: 100%;
+  padding-right: 40px; /* 右邊留空位給眼睛 */
+}
+
+/* 眼睛按鈕 */
+.btn-eye {
+  position: absolute;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-sub);
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.btn-eye:hover {
+  color: var(--milk-tea);
+}
+
+.input-group input::placeholder {
+  color: var(--text-sub);
+  opacity: 0.7;
+}
+
 .input-group input:focus {
   border-color: var(--milk-tea);
-  box-shadow: 0 0 8px rgba(230, 204, 178, 0.3);
-  background-color: #333;
+  filter: brightness(1.1); 
+  box-shadow: 0 0 8px rgba(230, 204, 178, 0.4);
 }
 
-/* 按鈕樣式 */
 .btn-submit {
-  width: 100%;
+  width: 100%; /* ✨ 關鍵：撐滿父容器 */
   padding: 14px;
   background-color: var(--milk-tea);
-  color: #121212; /* 按鈕文字用深色，對比才夠 */
+  color: #121212; 
   border: none;
   border-radius: 8px;
   font-size: 1.1rem;
@@ -145,15 +166,14 @@
 }
 
 .btn-submit:disabled {
-  background-color: #555;
-  color: #888;
+  background-color: var(--input-border);
+  color: var(--text-sub);
   cursor: not-allowed;
 }
 
-/* 錯誤訊息 */
 .error-msg {
   background-color: rgba(255, 107, 107, 0.1);
-  color: var(--danger);
+  color: #ff6b6b;
   padding: 10px;
   border-radius: 6px;
   font-size: 0.9rem;

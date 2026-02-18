@@ -1,0 +1,29 @@
+/* frontend/src/assets/Theme.css */
+
+/* 預設：深色模式 (Dark Mode) */
+:root {
+  --milk-tea: #E6CCB2;       /* 奶茶色 */
+  --milk-tea-dark: #D4B595;  /* 深奶茶 (Hover) */
+  --bg-color: #121212;       /* 背景 */
+  --bg-gradient: radial-gradient(circle at center, #1a1a1a 0%, #0d0d0d 100%);
+  --card-bg: #1E1E1E;        /* 卡片背景 */
+  --text-color: #F0F0F0;     /* 主文字 */
+  --text-sub: #AAAAAA;       /* 副文字 */
+  --input-bg: #2A2A2A;       /* 輸入框背景 */
+  --input-border: #444444;   /* 輸入框邊框 */
+  --shadow-color: rgba(255, 255, 255, 0.15);
+}
+
+/* 亮色模式 (Light Mode) - 當 <html> 或 <body> 有 .light-mode class 時生效 */
+:root.light-mode {
+  --milk-tea: #C0A080;       /* 亮色模式下，奶茶色要深一點點才看得清楚 */
+  --milk-tea-dark: #A08060;
+  --bg-color: #F5F5F5;       /* 淺灰白背景 */
+  --bg-gradient: radial-gradient(circle at center, #ffffff 0%, #e0e0e0 100%);
+  --card-bg: #FFFFFF;        /* 純白卡片 */
+  --text-color: #333333;     /* 深灰文字 */
+  --text-sub: #666666;       /* 次深灰文字 */
+  --input-bg: #F0F0F0;       /* 淺灰輸入框 */
+  --input-border: #DDDDDD;   /* 淺灰邊框 */
+  --shadow-color: rgba(0, 0, 0, 0.1); /* 陰影要淡一點 */
+}

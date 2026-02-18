@@ -2,7 +2,6 @@
 import { ref } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
-// 引入剛剛寫好的樣式
 import '@/assets/css/login.css';
 
 const router = useRouter();
@@ -10,27 +9,20 @@ const username = ref('');
 const password = ref('');
 const errorMsg = ref('');
 const isLoading = ref(false);
+const showPassword = ref(false); // ✨ 控制密碼顯示狀態
 
 const handleLogin = async () => {
   errorMsg.value = '';
   isLoading.value = true;
 
-  // FastAPI 的 OAuth2PasswordRequestForm 需要用 FormData 傳送
   const formData = new FormData();
   formData.append('username', username.value);
   formData.append('password', password.value);
 
   try {
     const res = await axios.post('/api/login', formData);
-    
-    // 登入成功：把 Token 存在 sessionStorage
     sessionStorage.setItem('admin_token', res.data.access_token);
-    
-    // 稍微延遲一下讓使用者看到成功的狀態 (選用)
-    setTimeout(() => {
-        router.push('/admin'); // 跳轉到後台
-    }, 500);
-
+    setTimeout(() => { router.push('/admin'); }, 500);
   } catch (error: any) {
     if (error.response && error.response.status === 429) {
       errorMsg.value = '錯誤次數過多，請稍後再試。';
@@ -64,14 +56,24 @@ const handleLogin = async () => {
           />
         </div>
         
-        <div class="input-group">
-          <label>通行密碼</label>
-          <input 
-            v-model="password" 
-            type="password" 
-            placeholder="請輸入密碼" 
-            required 
-          />
+        <div class="input-group password-group">
+          <label>密碼</label>
+          <div class="password-wrapper">
+            <input 
+              v-model="password" 
+              :type="showPassword ? 'text' : 'password'" 
+              placeholder="請輸入密碼" 
+              required 
+            />
+            <button 
+              type="button" 
+              class="btn-eye" 
+              @click="showPassword = !showPassword"
+              tabindex="-1"
+            >
+              <i class="fa-solid" :class="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+            </button>
+          </div>
         </div>
 
         <div v-if="errorMsg" class="error-msg">
