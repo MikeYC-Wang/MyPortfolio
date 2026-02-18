@@ -2,7 +2,7 @@ import os
 import shutil
 import uuid
 from fastapi import FastAPI, Depends, HTTPException, File, UploadFile
-from fastapi.staticfiles import StaticFiles # ✨ 新增：靜態檔案服務
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, TIMESTAMP
