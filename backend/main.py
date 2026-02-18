@@ -1,4 +1,8 @@
-from fastapi import FastAPI, Depends, HTTPException
+import os
+import shutil
+import uuid
+from fastapi import FastAPI, Depends, HTTPException, File, UploadFile
+from fastapi.staticfiles import StaticFiles # ✨ 新增：靜態檔案服務
 from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, TIMESTAMP
@@ -9,7 +13,6 @@ from sqlalchemy.sql import func
 # ==========================================
 # 1. 資料庫連線設定
 # ==========================================
-# 請再次確認密碼是否正確
 SQLALCHEMY_DATABASE_URL = "postgresql://postgres:Day25143@localhost:5432/portfolio_db"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
@@ -19,8 +22,6 @@ Base = declarative_base()
 # ==========================================
 # 2. 資料庫模型 (DB Models)
 # ==========================================
-
-# A. 專案 (首頁作品集用)
 class ProjectModel(Base):
     __tablename__ = "projects"
     id = Column(Integer, primary_key=True, index=True)
@@ -28,7 +29,6 @@ class ProjectModel(Base):
     description = Column(Text)
     tech_stack = Column(String)
 
-# B. 特效程式碼 (特效實驗室用)
 class CodeSnippetModel(Base):
     __tablename__ = "code_snippets"
     id = Column(Integer, primary_key=True, index=True)
@@ -40,7 +40,6 @@ class CodeSnippetModel(Base):
     is_published = Column(Boolean, default=True)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
-# C. 部落格文章 (未來擴充用)
 class PostModel(Base):
     __tablename__ = "posts"
     id = Column(Integer, primary_key=True, index=True)
@@ -50,7 +49,6 @@ class PostModel(Base):
     is_published = Column(Boolean, default=True)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
-# D. 技能 (雷達圖用)
 class SkillModel(Base):
     __tablename__ = "skills"
     id = Column(Integer, primary_key=True, index=True)
@@ -61,8 +59,6 @@ class SkillModel(Base):
 # ==========================================
 # 3. 傳輸模型 (Pydantic Schemas)
 # ==========================================
-
-# 專案 Schema
 class ProjectSchema(BaseModel):
     id: int
     title: str
@@ -71,7 +67,6 @@ class ProjectSchema(BaseModel):
     class Config:
         from_attributes = True
 
-# 特效新增用的 Schema
 class CodeSnippetCreate(BaseModel):
     title: str
     description: Optional[str] = ""
@@ -80,14 +75,12 @@ class CodeSnippetCreate(BaseModel):
     js_code: Optional[str] = ""
     is_published: bool = True
 
-# 特效讀取用的 Schema
 class CodeSnippetSchema(CodeSnippetCreate):
     id: int
     created_at: Optional[object] = None
     class Config:
         from_attributes = True
 
-# 文章 Schema (讀取用)
 class PostSchema(BaseModel):
     id: int
     title: str
@@ -97,14 +90,12 @@ class PostSchema(BaseModel):
     class Config:
         from_attributes = True
 
-# 文章 Schema (新增用)
 class PostCreate(BaseModel):
     title: str
     content: str
     cover_image: Optional[str] = None
     is_published: bool = True
 
-# 技能 Schema (雷達圖用)
 class SkillSchema(BaseModel):
     category: str
     score: int
@@ -116,6 +107,15 @@ class SkillSchema(BaseModel):
 # ==========================================
 app = FastAPI()
 
+# ✨ 設定圖片上傳資料夾
+UPLOAD_DIR = "static/uploads"
+# 如果資料夾不存在，就自動建立
+if not os.path.exists(UPLOAD_DIR):
+    os.makedirs(UPLOAD_DIR)
+
+# ✨ 掛載靜態檔案路由 (這樣瀏覽器才能透過 /static/xxx 看到圖片)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 def get_db():
     db = SessionLocal()
     try:
@@ -126,6 +126,21 @@ def get_db():
 @app.get("/")
 def read_root():
     return {"message": "全端核心 V2.3 (含技能) 啟動成功！"}
+
+# --- 圖片上傳 API (新增 ✨) ---
+@app.post("/api/upload")
+async def upload_image(file: UploadFile = File(...)):
+    # 1. 產生唯一的檔名 (避免檔名重複覆蓋)
+    file_ext = file.filename.split(".")[-1]
+    file_name = f"{uuid.uuid4()}.{file_ext}"
+    file_path = f"{UPLOAD_DIR}/{file_name}"
+    
+    # 2. 將檔案存入硬碟
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    # 3. 回傳圖片的網址 (前端拿到這個網址後，存進 cover_image)
+    return {"url": f"/static/uploads/{file_name}"}
 
 # --- 專案 API ---
 @app.get("/api/projects", response_model=List[ProjectSchema])
@@ -148,7 +163,6 @@ def create_snippet(snippet: CodeSnippetCreate, db: Session = Depends(get_db)):
 # --- 技能 API ---
 @app.get("/api/skills", response_model=List[SkillSchema])
 def get_skills(db: Session = Depends(get_db)):
-    # 按照 skill_order 排序
     return db.query(SkillModel).order_by(SkillModel.skill_order).all()
 
 # --- 文章 API ---

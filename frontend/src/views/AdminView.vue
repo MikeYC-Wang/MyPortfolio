@@ -11,14 +11,45 @@ const router = useRouter();
 // 表單資料
 const postForm = ref({
   title: '',
-  cover_image: '',
+  cover_image: '', // 這裡會存上傳成功後的圖片網址
   content: '# 在這裡開始寫你的文章...',
   is_published: true
 });
 
 const isSubmitting = ref(false);
+const isUploading = ref(false); // 上傳狀態
 
-// --- Markdown 解析設定 (與前台一致，確保預覽準確) ---
+// --- 圖片上傳處理邏輯 ---
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (target.files && target.files[0]) {
+    const file = target.files[0];
+    
+    // 建立 FormData 物件
+    const formData = new FormData();
+    formData.append('file', file);
+
+    isUploading.value = true;
+    try {
+      // 傳送給後端新的上傳 API
+      const res = await axios.post('/api/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      // 後端會回傳 { "url": "/static/uploads/xxx.jpg" }
+      postForm.value.cover_image = res.data.url; 
+    } catch (error) {
+      console.error('上傳失敗', error);
+      alert('圖片上傳失敗，請檢查後端是否啟動');
+    } finally {
+      isUploading.value = false;
+    }
+  }
+};
+
+// --- Markdown 解析設定 (保持不變) ---
 const escapeHtml = (unsafe: string): string => {
   return unsafe
     .replace(/&/g, "&amp;")
@@ -62,11 +93,10 @@ const submitPost = async () => {
     await axios.post('/api/posts', postForm.value);
     
     alert('🎉 文章發布成功！');
-    // 成功後跳轉回部落格列表
     router.push('/blog');
   } catch (error) {
     console.error(error);
-    alert('發布失敗，請檢查後端是否啟動');
+    alert('發布失敗，請檢查後端');
   } finally {
     isSubmitting.value = false;
   }
@@ -77,7 +107,7 @@ const submitPost = async () => {
   <div class="admin-container">
     <div class="header-actions">
       <h1><i class="fa-solid fa-user-secret"></i> 後台管理中心</h1>
-      <button @click="submitPost" :disabled="isSubmitting" class="publish-btn">
+      <button @click="submitPost" :disabled="isSubmitting || isUploading" class="publish-btn">
         <span v-if="isSubmitting"><i class="fa-solid fa-spinner fa-spin"></i> 發布中...</span>
         <span v-else><i class="fa-solid fa-paper-plane"></i> 發布文章</span>
       </button>
@@ -87,8 +117,18 @@ const submitPost = async () => {
       <input v-model="postForm.title" type="text" placeholder="請輸入文章標題..." class="title-input" />
     </div>
 
-    <div class="input-group">
-      <input v-model="postForm.cover_image" type="text" placeholder="封面圖片網址 (Optional)..." class="url-input" />
+    <div class="input-group upload-group">
+      <label class="upload-btn">
+        <i class="fa-solid fa-cloud-arrow-up"></i> 
+        <span v-if="isUploading">上傳中...</span>
+        <span v-else>上傳封面圖片</span>
+        <input type="file" @change="handleFileUpload" accept="image/*" class="file-input" />
+      </label>
+
+      <div v-if="postForm.cover_image" class="image-preview">
+        <img :src="postForm.cover_image" alt="Cover Preview" />
+        <span class="preview-label">目前封面</span>
+      </div>
     </div>
 
     <div class="editor-area">
@@ -107,10 +147,10 @@ const submitPost = async () => {
 
 <style scoped>
 .admin-container {
-  max-width: 1400px; /* 寬一點比較好編輯 */
+  max-width: 1400px;
   margin: 0 auto;
   padding: 2rem;
-  height: calc(100vh - 100px); /* 扣掉導覽列高度 */
+  height: calc(100vh - 100px);
   display: flex;
   flex-direction: column;
 }
@@ -148,18 +188,55 @@ h1 { margin: 0; color: var(--text-color); }
   border: 1px solid var(--card-border);
   color: var(--text-color);
   border-radius: 8px;
-  box-sizing: border-box; /* 確保 padding 不會撐爆寬度 */
+  box-sizing: border-box;
 }
 
-.url-input {
-  width: 100%;
-  padding: 10px;
-  font-size: 1rem;
+/* --- 上傳按鈕樣式 --- */
+.upload-group {
+  display: flex;
+  align-items: center;
+  gap: 20px;
   background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  color: var(--link-color);
+  padding: 10px;
   border-radius: 8px;
-  box-sizing: border-box;
+  border: 1px solid var(--card-border);
+}
+
+.upload-btn {
+  background: var(--btn-bg);
+  color: var(--text-color);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border-color);
+  transition: 0.2s;
+}
+.upload-btn:hover { background: var(--btn-hover); }
+
+.file-input { display: none; } /* 隱藏原本醜醜的 input */
+
+.image-preview {
+  position: relative;
+  height: 50px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+  display: flex;
+  align-items: center;
+}
+
+.image-preview img {
+  height: 100%;
+  object-fit: cover;
+}
+
+.preview-label {
+  font-size: 0.8rem;
+  margin-left: 10px;
+  color: var(--link-color);
 }
 
 /* --- 雙欄編輯區 --- */
@@ -167,8 +244,8 @@ h1 { margin: 0; color: var(--text-color); }
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
-  flex-grow: 1; /* 佔滿剩餘高度 */
-  min-height: 0; /* 防止 grid 溢出 */
+  flex-grow: 1;
+  min-height: 0;
 }
 
 .editor-pane, .preview-pane {
@@ -209,13 +286,10 @@ h1 { margin: 0; color: var(--text-color); }
   color: var(--text-color);
 }
 
-/* --- 預覽區樣式 (與 PostDetailView 保持一致) --- */
 :deep(.content-preview) { line-height: 1.8; }
 :deep(h1), :deep(h2), :deep(h3) { margin-top: 1rem; margin-bottom: 1rem; color: var(--link-active); }
 :deep(pre) { background: #282c34; padding: 1rem; border-radius: 8px; overflow-x: auto; }
 :deep(code) { font-family: 'Fira Code', monospace; }
 :deep(p) { margin-bottom: 1rem; }
-:deep(ul) { padding-left: 1.5rem; }
-:deep(blockquote) { border-left: 4px solid var(--link-active); padding-left: 1rem; color: #888; }
 :deep(img) { max-width: 100%; border-radius: 8px; }
 </style>
