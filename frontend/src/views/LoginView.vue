@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
 import '@/assets/css/login.css';
+import '@/assets/css/Theme.css';
 
 const router = useRouter();
 const username = ref('');
