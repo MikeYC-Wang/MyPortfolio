@@ -79,11 +79,12 @@
   background: var(--card-bg);
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.05); /* 微弱邊框 */
+  border: 1px solid rgba(255, 255, 255, 0.05);
   transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
   display: flex;
   flex-direction: column;
-  height: 400px; /* 固定高度讓卡片整齊 */
+  height: 400px;
+  cursor: pointer;
 }
 
 .snippet-card:hover {
@@ -126,9 +127,18 @@
 .iframe-wrapper {
   position: relative;
   height: 200px;
-  background: #1e1e1e; /* 預覽區背景維持深色，比較像 CodePen */
+  background: #1e1e1e;
   overflow: hidden;
   border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.iframe-wrapper iframe {
+  width: 250%;    
+  height: 250%;     
+  border: none;
+  transform: scale(0.4);
+  transform-origin: 0 0;
+  pointer-events: none;
 }
 
 /* 覆蓋層 (點擊用) */
@@ -169,11 +179,36 @@
 .tag {
   font-size: 0.75rem;
   padding: 4px 8px;
-  background: rgba(128, 128, 128, 0.2); /* 半透明灰背景 */
+  background: rgba(128, 128, 128, 0.2);
   border-radius: 4px;
   color: var(--text-sub);
   font-family: 'Fira Code', monospace;
   border: 1px solid rgba(128, 128, 128, 0.3);
+  transition: all 0.2s ease-in-out;
+}
+
+/* HTML 橘紅色 */
+.tag-html:hover {
+  background: rgba(227, 76, 38, 0.2) !important;
+  color: #e34c26 !important;
+  border-color: #e34c26 !important;
+  box-shadow: 0 0 8px rgba(227, 76, 38, 0.4);
+}
+
+/* CSS 藍色 */
+.tag-css:hover {
+  background: rgba(38, 77, 228, 0.2) !important;
+  color: #264de4 !important;
+  border-color: #264de4 !important;
+  box-shadow: 0 0 8px rgba(38, 77, 228, 0.4);
+}
+
+/* JS 黃色 */
+.tag-js:hover {
+  background: rgba(240, 219, 79, 0.2) !important;
+  color: #f0db4f !important;
+  border-color: #f0db4f !important;
+  box-shadow: 0 0 8px rgba(240, 219, 79, 0.4);
 }
 
 .loading {
