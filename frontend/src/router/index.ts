@@ -18,7 +18,7 @@ const router = createRouter({
       component: LabEditorView 
     },
     { 
-      path: '/lab/edit/:id',
+      path: '/lab/edit/:slug',
       name: 'lab-edit', 
       component: LabEditorView 
     },
