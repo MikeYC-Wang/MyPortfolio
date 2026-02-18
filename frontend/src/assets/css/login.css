@@ -1,0 +1,166 @@
+/* frontend/src/assets/css/login.css */
+
+/* 定義變數：奶茶色系 */
+:root {
+  --milk-tea: #E6CCB2;       /* 主奶茶色 */
+  --milk-tea-dark: #D4B595;  /* 深一點的奶茶色 (Hover用) */
+  --bg-dark: #121212;        /* 背景黑 */
+  --card-bg: #1E1E1E;        /* 卡片深灰 */
+  --text-main: #F0F0F0;      /* 主文字白 */
+  --text-sub: #AAAAAA;       /* 副標題灰 */
+  --danger: #ff6b6b;         /* 錯誤紅 */
+}
+
+/* 全頁背景 */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  /* 加入一點點漸層讓背景不那麼死板 */
+  background-image: radial-gradient(circle at center, #1a1a1a 0%, #0d0d0d 100%);
+}
+
+/* 登入卡片主體 */
+.login-box {
+  width: 100%;
+  max-width: 400px;
+  padding: 3rem 2.5rem;
+  background-color: var(--card-bg);
+  border-radius: 16px; /* 圓角 */
+  
+  /* 關鍵：左側奶茶色裝飾線 (模仿首頁卡片風格) */
+  border-left: 6px solid var(--milk-tea);
+  
+  /* 關鍵：卡片陰影 */
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  transition: transform 0.3s ease;
+}
+
+.login-box:hover {
+  transform: translateY(-5px); /* 滑鼠移上去稍微浮起 */
+}
+
+/* 標題區塊 */
+.login-header {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.login-header i {
+  font-size: 3rem;
+  color: var(--milk-tea);
+  margin-bottom: 1rem;
+  filter: drop-shadow(0 0 5px rgba(230, 204, 178, 0.5));
+}
+
+.login-header h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+  letter-spacing: 2px;
+}
+
+.login-header p {
+  color: var(--text-sub);
+  font-size: 0.9rem;
+  margin-top: 5px;
+}
+
+/* 表單區域 */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: left;
+}
+
+.input-group label {
+  font-size: 0.9rem;
+  color: var(--milk-tea); /* 標籤用奶茶色 */
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+/* 輸入框樣式 */
+.input-group input {
+  width: 100%;
+  padding: 12px 15px;
+  background-color: #2A2A2A;
+  border: 1px solid #444;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.input-group input::placeholder {
+  color: #666;
+}
+
+/* 輸入框 Focus 特效 */
+.input-group input:focus {
+  border-color: var(--milk-tea);
+  box-shadow: 0 0 8px rgba(230, 204, 178, 0.3);
+  background-color: #333;
+}
+
+/* 按鈕樣式 */
+.btn-submit {
+  width: 100%;
+  padding: 14px;
+  background-color: var(--milk-tea);
+  color: #121212; /* 按鈕文字用深色，對比才夠 */
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background-color: var(--milk-tea-dark);
+  transform: scale(1.02);
+  box-shadow: 0 5px 15px rgba(230, 204, 178, 0.4);
+}
+
+.btn-submit:disabled {
+  background-color: #555;
+  color: #888;
+  cursor: not-allowed;
+}
+
+/* 錯誤訊息 */
+.error-msg {
+  background-color: rgba(255, 107, 107, 0.1);
+  color: var(--danger);
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  text-align: center;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
