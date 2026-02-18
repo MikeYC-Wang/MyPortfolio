@@ -1,3 +1,5 @@
+/* frontend/src/assets/css/lab-editor.css */
+
 .editor-container {
   height: 100vh;
   display: flex;
@@ -15,14 +17,10 @@
   justify-content: space-between;
   align-items: center;
   padding: 0 20px;
+  flex-shrink: 0;
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  flex: 1;
-}
+.header-left { display: flex; align-items: center; gap: 15px; flex: 1; }
 
 .btn-back {
   background: transparent;
@@ -44,11 +42,7 @@
   border-color: var(--milk-tea);
 }
 
-.meta-inputs {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
+.meta-inputs { display: flex; flex-direction: column; gap: 2px; }
 
 .input-title {
   background: transparent;
@@ -59,7 +53,6 @@
   outline: none;
   width: 300px;
 }
-
 .input-title::placeholder { color: var(--text-sub); opacity: 0.5; }
 
 .btn-save {
@@ -74,63 +67,54 @@
   align-items: center;
   gap: 8px;
   transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 4px 15px rgba(230, 204, 178, 0.2);
 }
+.btn-save:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(230, 204, 178, 0.4); }
+.btn-save:disabled { opacity: 0.7; cursor: not-allowed; }
 
-.btn-save:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(230, 204, 178, 0.4);
-}
-
-.btn-save:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-/* --- Workspace (左右分割) --- */
+/* --- Workspace (上下分割) --- */
 .workspace {
   flex: 1;
   display: flex;
+  flex-direction: column; /* ✨ 改為垂直排列：上面是代碼，下面是預覽 */
   overflow: hidden;
+  height: calc(100vh - 60px); /* 扣掉 Header 高度 */
 }
 
-/* 左側代碼區 */
+/* 上半部：代碼編輯區 */
 .code-panel {
-  width: 40%; /* 預設佔 40% */
-  min-width: 350px;
+  height: 50%; /* 佔一半高度 */
+  min-height: 200px;
   display: flex;
-  flex-direction: column;
-  border-right: 1px solid var(--border-color, #333);
-  background: #1e1e1e; /* 編輯器背景維持深色 */
+  flex-direction: row; /* 三個編輯區水平並排 */
+  border-bottom: 5px solid var(--bg-color); /* 中間加個分隔條 */
+  background: #1e1e1e;
 }
 
 .editor-section {
   flex: 1;
   display: flex;
   flex-direction: column;
-  border-bottom: 1px solid #333;
+  border-right: 1px solid #333;
   position: relative;
+  min-width: 0; /* 防止 flex 項目溢出 */
 }
-.editor-section:last-child { border-bottom: none; }
+.editor-section:last-child { border-right: none; }
 
-/* 語言標籤 */
 .section-header {
-  padding: 5px 15px;
-  font-size: 0.8rem;
+  padding: 8px 15px;
+  font-size: 0.85rem;
   font-weight: bold;
   color: #aaa;
   background: #252526;
   display: flex;
   align-items: center;
   gap: 8px;
-  user-select: none;
+  border-bottom: 1px solid #333;
 }
+.html-label { border-top: 3px solid #e34c26; }
+.css-label { border-top: 3px solid #264de4; }
+.js-label { border-top: 3px solid #f0db4f; }
 
-.html-label { border-left: 3px solid #e34c26; }
-.css-label { border-left: 3px solid #264de4; }
-.js-label { border-left: 3px solid #f0db4f; }
-
-/* 輸入框 */
 textarea.code-input {
   flex: 1;
   background: #1e1e1e;
@@ -144,14 +128,13 @@ textarea.code-input {
   line-height: 1.6;
 }
 
-/* 右側預覽區 */
+/* 下半部：預覽區 */
 .preview-panel {
-  flex: 1;
+  flex: 1; /* 自動填滿剩下的高度 */
   background: #fff;
   position: relative;
   display: flex;
   flex-direction: column;
-  height: 100%;
   overflow: hidden;
 }
 
@@ -165,6 +148,7 @@ textarea.code-input {
   flex-shrink: 0;
 }
 
+/* ✨ 關鍵：確保 iframe 撐滿且可操作 */
 iframe {
   flex-grow: 1;
   width: 100%;
@@ -173,9 +157,9 @@ iframe {
   display: block;
 }
 
-/* RWD */
+/* RWD: 手機版改成全垂直 */
 @media (max-width: 768px) {
-  .workspace { flex-direction: column; }
-  .code-panel { width: 100%; height: 50%; }
-  .preview-panel { height: 50%; }
+  .code-panel { flex-direction: column; height: 60%; overflow-y: auto; }
+  .editor-section { min-height: 150px; border-right: none; border-bottom: 1px solid #333; }
+  .preview-panel { height: 40%; }
 }

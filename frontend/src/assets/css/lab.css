@@ -131,15 +131,6 @@
   border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
-iframe {
-  width: 200%; /* 放大兩倍 */
-  height: 200%;
-  border: none;
-  transform: scale(0.5); /* 再縮小回一半，製造高解析度縮圖效果 */
-  transform-origin: 0 0;
-  pointer-events: none; /* 禁止滑鼠操作 iframe 內部 */
-}
-
 /* 覆蓋層 (點擊用) */
 .overlay {
   position: absolute;

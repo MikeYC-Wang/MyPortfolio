@@ -24,12 +24,19 @@ const srcDoc = computed(() => {
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <style>
-          /* 預設 CSS Reset，確保內容撐滿 iframe */
-          html, body {
+          html {
+            box-sizing: border-box;
+          }
+          *, *:before, *:after {
+            box-sizing: inherit;
+          }
+          body {
             margin: 0;
             padding: 0;
             width: 100%;
-            height: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
           }
           /* 使用者輸入的 CSS */
           ${cssCode.value}
@@ -38,7 +45,6 @@ const srcDoc = computed(() => {
       <body>
         ${htmlCode.value}
         <script>
-          /* 使用者輸入的 JS (包含錯誤捕捉) */
           try {
             ${jsCode.value}
           } catch (err) {
