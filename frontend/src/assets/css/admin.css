@@ -1,0 +1,288 @@
+/* --- AdminView 專用樣式 --- */
+
+/* 修正: 全面改用 CSS 變數以支援淺色模式 */
+.admin-wrapper {
+  display: flex;
+  height: calc(100vh - 80px);
+  overflow: hidden;
+  background-color: var(--nav-bg);
+  position: relative;
+  color: var(--text-color);
+}
+
+/* --- 左側邊欄 --- */
+.sidebar {
+  width: 280px;
+  background: var(--card-bg);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+  flex-shrink: 0;
+}
+
+.sidebar.closed {
+  width: 0;
+  overflow: hidden;
+  border: none;
+}
+
+.sidebar-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header h2 { margin: 0 0 15px 0; font-size: 1.2rem; color: var(--text-color); }
+
+.btn-new {
+  width: 100%;
+  padding: 10px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+}
+.btn-new:hover { background: #0056b3; }
+
+.post-list {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.post-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: rgba(0,0,0,0.1);
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: 0.2s;
+}
+
+.post-item:hover { background: var(--btn-hover); }
+.post-item.active { 
+  background: var(--btn-hover); 
+  border-color: #007bff; 
+  box-shadow: 0 0 10px rgba(0, 123, 255, 0.2);
+}
+
+.post-info { display: flex; flex-direction: column; overflow: hidden; }
+.post-title { 
+  color: var(--text-color); 
+  font-weight: bold; 
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+}
+.post-id { color: var(--link-color); font-size: 0.8rem; }
+
+.btn-delete {
+  background: transparent;
+  border: none;
+  color: var(--link-color);
+  cursor: pointer;
+  padding: 5px;
+  transition: 0.2s;
+}
+.btn-delete:hover { color: #ff4d4d; }
+
+.toggle-sidebar-btn {
+  position: absolute;
+  top: 50%;
+  width: 20px;
+  height: 40px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+  color: var(--text-color);
+  cursor: pointer;
+  z-index: 100;
+  transition: left 0.3s ease;
+}
+
+/* --- 右側編輯區 --- */
+.editor-container {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  min-width: 0;
+}
+
+.header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.header-actions h1 { margin: 0; font-size: 1.5rem; color: var(--text-color); display: flex; align-items: center; gap: 10px; }
+
+/* 按鈕群組容器 (包含發布和登出) */
+.action-buttons {
+  display: flex;
+  gap: 10px; /* 按鈕之間的間距 */
+}
+
+.publish-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: 0.2s;
+}
+.publish-btn:hover { background: #218838; transform: translateY(-2px); }
+.publish-btn.update-mode { background: #e0a800; }
+.publish-btn.update-mode:hover { background: #c69500; }
+
+/* ✨ 新增登出按鈕樣式 */
+.logout-btn {
+  background: #dc3545; /* 紅色系 */
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: 0.2s;
+}
+.logout-btn:hover { background: #c82333; transform: translateY(-2px); }
+
+.form-grid { margin-bottom: 15px; display: flex; flex-direction: column; gap: 15px; }
+
+.title-input {
+  width: 100%;
+  padding: 15px;
+  font-size: 1.5rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.upload-group { display: flex; align-items: center; gap: 15px; }
+.upload-btn {
+  background: var(--btn-bg);
+  color: var(--text-color);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border-color);
+}
+.upload-btn:hover { background: var(--btn-hover); }
+
+.file-input { display: none; }
+.url-input { 
+  flex-grow: 1; 
+  padding: 10px; 
+  background: var(--card-bg); 
+  border: 1px solid var(--border-color); 
+  color: var(--text-color); 
+  border-radius: 6px; 
+}
+
+.image-preview { height: 40px; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-color); }
+.image-preview img { height: 100%; }
+
+/* --- 雙欄編輯器 --- */
+.editor-area {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  flex-grow: 1;
+  min-height: 0;
+}
+
+.editor-pane, .preview-pane {
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pane-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0,0,0,0.1);
+  border-bottom: 1px solid var(--border-color);
+  padding: 5px 10px;
+}
+
+.pane-label {
+  font-size: 0.85rem;
+  color: var(--link-color);
+  font-weight: bold;
+}
+
+/* 工具列樣式 */
+.toolbar {
+  display: flex;
+  gap: 5px;
+}
+
+.toolbar button {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--link-color);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  transition: 0.2s;
+}
+.toolbar button:hover {
+  background: var(--btn-hover);
+  color: var(--link-active);
+}
+
+.markdown-input {
+  flex-grow: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-color);
+  padding: 20px;
+  font-family: 'Fira Code', monospace;
+  font-size: 1rem;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+}
+
+.content-preview {
+  flex-grow: 1;
+  padding: 20px;
+  overflow-y: auto;
+  color: var(--text-color);
+  background: var(--card-bg);
+}
+
+/* RWD */
+@media (max-width: 768px) {
+  .editor-area { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+  .sidebar { position: absolute; height: 100%; z-index: 50; }
+  .sidebar.closed { transform: translateX(-100%); width: 280px; }
+}

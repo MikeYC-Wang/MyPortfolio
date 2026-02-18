@@ -41,7 +41,7 @@ onMounted(async () => {
 
 <template>
   <div class="blog-container">
-    <h1 class="page-title"><i class="fa-solid fa-pen-nib"></i> 技術部落格</h1>
+    <h1 class="page-title"><i class="fa-solid fa-pen-nib"></i> 個人部落格</h1>
 
     <div v-if="loading" class="loading">Loading...</div>
 

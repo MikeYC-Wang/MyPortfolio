@@ -6,6 +6,9 @@ import MarkdownIt from 'markdown-it';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-dark.css';
 
+// ✨ 引入獨立的 CSS 檔案
+import '@/assets/css/admin.css';
+
 // 定義文章型別
 interface Post {
   id: number;
@@ -25,10 +28,8 @@ const isSubmitting = ref(false);
 const isUploading = ref(false);
 const isSidebarOpen = ref(true);
 
-// 編輯器參照 (用來插入文字)
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
 
-// 表單資料
 const postForm = ref({
   title: '',
   cover_image: '',
@@ -36,7 +37,16 @@ const postForm = ref({
   is_published: true
 });
 
-// --- 功能 3: Markdown 工具列輔助 ---
+// --- 功能: 登出 ---
+const logout = () => {
+  // 清除 session storage 裡的 token
+  sessionStorage.removeItem('admin_token');
+  alert('已成功登出');
+  // 跳轉回登入頁
+  router.push('/login');
+};
+
+// --- 功能: Markdown 工具列輔助 ---
 const insertMarkdown = (type: string) => {
   if (!textareaRef.value) return;
   
@@ -50,48 +60,18 @@ const insertMarkdown = (type: string) => {
   let newCursorPos = 0;
 
   switch (type) {
-    case 'bold':
-      insertText = `**${selectedText || '粗體文字'}**`;
-      newCursorPos = start + 2;
-      break;
-    case 'italic':
-      insertText = `*${selectedText || '斜體文字'}*`;
-      newCursorPos = start + 1;
-      break;
-    case 'h1':
-      insertText = `# ${selectedText || '大標題'}\n`;
-      newCursorPos = start + 2;
-      break;
-    case 'h2':
-      insertText = `## ${selectedText || '次標題'}\n`;
-      newCursorPos = start + 3;
-      break;
-    case 'code':
-      insertText = `\`${selectedText || '程式碼'}\``;
-      newCursorPos = start + 1;
-      break;
-    case 'blockcode':
-      insertText = `\n\`\`\`javascript\n${selectedText || 'console.log("Code");'}\n\`\`\`\n`;
-      newCursorPos = start + 14;
-      break;
-    case 'link':
-      insertText = `[${selectedText || '連結文字'}](url)`;
-      newCursorPos = start + 1;
-      break;
-    case 'image':
-      insertText = `![圖片描述](${selectedText || '圖片網址'})`;
-      newCursorPos = start + 2;
-      break;
-    case 'hr':
-      insertText = `\n---\n`;
-      newCursorPos = start + 5;
-      break;
+    case 'bold': insertText = `**${selectedText || '粗體文字'}**`; newCursorPos = start + 2; break;
+    case 'italic': insertText = `*${selectedText || '斜體文字'}*`; newCursorPos = start + 1; break;
+    case 'h1': insertText = `# ${selectedText || '大標題'}\n`; newCursorPos = start + 2; break;
+    case 'h2': insertText = `## ${selectedText || '次標題'}\n`; newCursorPos = start + 3; break;
+    case 'code': insertText = `\`${selectedText || '程式碼'}\``; newCursorPos = start + 1; break;
+    case 'blockcode': insertText = `\n\`\`\`javascript\n${selectedText || 'console.log("Code");'}\n\`\`\`\n`; newCursorPos = start + 14; break;
+    case 'link': insertText = `[${selectedText || '連結文字'}](url)`; newCursorPos = start + 1; break;
+    case 'image': insertText = `![圖片描述](${selectedText || '圖片網址'})`; newCursorPos = start + 2; break;
+    case 'hr': insertText = `\n---\n`; newCursorPos = start + 5; break;
   }
 
-  // 插入文字
   postForm.value.content = text.substring(0, start) + insertText + text.substring(end);
-  
-  // 重新聚焦並移動游標 (稍微延遲以確保 DOM 更新)
   setTimeout(() => {
     textarea.focus();
     textarea.setSelectionRange(start + insertText.length, start + insertText.length);
@@ -110,12 +90,7 @@ const fetchPosts = async () => {
 
 const initCreateMode = () => {
   currentPostId.value = null;
-  postForm.value = {
-    title: '',
-    cover_image: '',
-    content: '# 在這裡開始寫新文章...',
-    is_published: true
-  };
+  postForm.value = { title: '', cover_image: '', content: '# 在這裡開始寫新文章...', is_published: true };
 };
 
 const selectPostToEdit = (post: Post) => {
@@ -126,9 +101,7 @@ const selectPostToEdit = (post: Post) => {
     content: post.content,
     is_published: post.is_published
   };
-  if (window.innerWidth < 768) {
-    isSidebarOpen.value = false;
-  }
+  if (window.innerWidth < 768) isSidebarOpen.value = false;
 };
 
 const handleDelete = async (id: number) => {
@@ -168,34 +141,23 @@ const submitPost = async () => {
   }
 };
 
-// --- 功能 3 & 4: 上傳限制與成功提示 ---
 const handleFileUpload = async (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files[0]) {
     const file = target.files[0];
-    
-    // 1. 檢查檔案類型
     const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
     if (!validTypes.includes(file.type)) {
       alert('格式錯誤！僅允許上傳 JPG, PNG 或 GIF 圖片。');
-      target.value = ''; // 清空選擇
+      target.value = '';
       return;
     }
-
     const formData = new FormData();
     formData.append('file', file);
-
     isUploading.value = true;
     try {
-      const res = await axios.post('/api/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      // 強制加上後端網址
+      const res = await axios.post('/api/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       postForm.value.cover_image = `http://127.0.0.1:8000${res.data.url}`;
-      
-      // 2. 成功提示
       alert('圖片上傳成功！');
-      
     } catch (error) {
       console.error('上傳失敗', error);
       alert('圖片上傳失敗');
@@ -215,9 +177,7 @@ const md = new MarkdownIt({
   typographer: true,
   highlight: function (str: string, lang: string): string {
     if (lang && hljs.getLanguage(lang)) {
-      try {
-        return '<pre class="hljs"><code>' + hljs.highlight(str, { language: lang, ignoreIllegals: true }).value + '</code></pre>';
-      } catch (__) {}
+      try { return '<pre class="hljs"><code>' + hljs.highlight(str, { language: lang, ignoreIllegals: true }).value + '</code></pre>'; } catch (__) {}
     }
     return '<pre class="hljs"><code>' + escapeHtml(str) + '</code></pre>';
   }
@@ -273,6 +233,7 @@ onMounted(() => {
           <i class="fa-solid fa-pen-to-square"></i> 
           {{ currentPostId ? '編輯文章' : '新增文章' }}
         </h1>
+        
         <div class="action-buttons">
           <button @click="submitPost" :disabled="isSubmitting || isUploading" class="publish-btn" :class="{ 'update-mode': currentPostId }">
             <span v-if="isSubmitting"><i class="fa-solid fa-spinner fa-spin"></i> 處理中...</span>
@@ -280,6 +241,10 @@ onMounted(() => {
               <i class="fa-solid" :class="currentPostId ? 'fa-save' : 'fa-paper-plane'"></i> 
               {{ currentPostId ? '更新文章' : '發布文章' }}
             </span>
+          </button>
+          
+          <button @click="logout" class="logout-btn">
+            <i class="fa-solid fa-right-from-bracket"></i> 登出
           </button>
         </div>
       </div>
@@ -340,265 +305,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* --- 修正 1: 全面改用 CSS 變數以支援淺色模式 --- */
-.admin-wrapper {
-  display: flex;
-  height: calc(100vh - 80px);
-  overflow: hidden;
-  background-color: var(--nav-bg); /* 改用變數 */
-  position: relative;
-  color: var(--text-color); /* 改用變數 */
-}
-
-/* --- 左側邊欄 --- */
-.sidebar {
-  width: 280px;
-  background: var(--card-bg); /* 改用變數 */
-  border-right: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
-  transition: width 0.3s ease;
-  flex-shrink: 0;
-}
-
-.sidebar.closed {
-  width: 0;
-  overflow: hidden;
-  border: none;
-}
-
-.sidebar-header {
-  padding: 20px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.sidebar-header h2 { margin: 0 0 15px 0; font-size: 1.2rem; color: var(--text-color); }
-
-.btn-new {
-  width: 100%;
-  padding: 10px;
-  background: #007bff;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: 0.2s;
-}
-.btn-new:hover { background: #0056b3; }
-
-.post-list {
-  flex-grow: 1;
-  overflow-y: auto;
-  padding: 10px;
-}
-
-.post-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px;
-  margin-bottom: 8px;
-  background: rgba(0,0,0,0.1); /* 微調背景 */
-  border-radius: 6px;
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: 0.2s;
-}
-
-.post-item:hover { background: var(--btn-hover); }
-.post-item.active { 
-  background: var(--btn-hover); 
-  border-color: #007bff; 
-  box-shadow: 0 0 10px rgba(0, 123, 255, 0.2);
-}
-
-.post-info { display: flex; flex-direction: column; overflow: hidden; }
-.post-title { 
-  color: var(--text-color); 
-  font-weight: bold; 
-  white-space: nowrap; 
-  overflow: hidden; 
-  text-overflow: ellipsis; 
-}
-.post-id { color: var(--link-color); font-size: 0.8rem; }
-
-.btn-delete {
-  background: transparent;
-  border: none;
-  color: var(--link-color);
-  cursor: pointer;
-  padding: 5px;
-  transition: 0.2s;
-}
-.btn-delete:hover { color: #ff4d4d; }
-
-.toggle-sidebar-btn {
-  position: absolute;
-  top: 50%;
-  width: 20px;
-  height: 40px;
-  background: var(--card-bg); /* 改用變數 */
-  border: 1px solid var(--border-color);
-  border-left: none;
-  border-radius: 0 4px 4px 0;
-  color: var(--text-color);
-  cursor: pointer;
-  z-index: 100;
-  transition: left 0.3s ease;
-}
-
-/* --- 右側編輯區 --- */
-.editor-container {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
-  min-width: 0;
-}
-
-.header-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.header-actions h1 { margin: 0; font-size: 1.5rem; color: var(--text-color); display: flex; align-items: center; gap: 10px; }
-
-.publish-btn {
-  background: #28a745;
-  color: white;
-  border: none;
-  padding: 10px 24px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: 0.2s;
-}
-.publish-btn:hover { background: #218838; transform: translateY(-2px); }
-.publish-btn.update-mode { background: #e0a800; }
-.publish-btn.update-mode:hover { background: #c69500; }
-
-.form-grid { margin-bottom: 15px; display: flex; flex-direction: column; gap: 15px; }
-
-.title-input {
-  width: 100%;
-  padding: 15px;
-  font-size: 1.5rem;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  color: var(--text-color);
-  border-radius: 8px;
-  box-sizing: border-box;
-}
-
-.upload-group { display: flex; align-items: center; gap: 15px; }
-.upload-btn {
-  background: var(--btn-bg);
-  color: var(--text-color);
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid var(--border-color);
-}
-.upload-btn:hover { background: var(--btn-hover); }
-
-.file-input { display: none; }
-.url-input { 
-  flex-grow: 1; 
-  padding: 10px; 
-  background: var(--card-bg); 
-  border: 1px solid var(--border-color); 
-  color: var(--text-color); 
-  border-radius: 6px; 
-}
-
-.image-preview { height: 40px; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-color); }
-.image-preview img { height: 100%; }
-
-/* --- 雙欄編輯器 --- */
-.editor-area {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  flex-grow: 1;
-  min-height: 0;
-}
-
-.editor-pane, .preview-pane {
-  display: flex;
-  flex-direction: column;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.pane-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(0,0,0,0.1);
-  border-bottom: 1px solid var(--border-color);
-  padding: 5px 10px;
-}
-
-.pane-label {
-  font-size: 0.85rem;
-  color: var(--link-color);
-  font-weight: bold;
-}
-
-/* 工具列樣式 */
-.toolbar {
-  display: flex;
-  gap: 5px;
-}
-
-.toolbar button {
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--link-color);
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  transition: 0.2s;
-}
-.toolbar button:hover {
-  background: var(--btn-hover);
-  color: var(--link-active);
-}
-
-.markdown-input {
-  flex-grow: 1;
-  background: transparent;
-  border: none;
-  color: var(--text-color);
-  padding: 20px;
-  font-family: 'Fira Code', monospace;
-  font-size: 1rem;
-  line-height: 1.6;
-  resize: none;
-  outline: none;
-}
-
-.content-preview {
-  flex-grow: 1;
-  padding: 20px;
-  overflow-y: auto;
-  color: var(--text-color);
-  background: var(--card-bg); /* 確保背景色跟著主題 */
-}
-
-/* 預覽區樣式 - 確保 Markdown 有顏色 */
 :deep(.content-preview) { line-height: 1.8; }
 :deep(h1), :deep(h2) { 
   border-bottom: 1px solid var(--border-color); 
@@ -612,11 +318,4 @@ onMounted(() => {
 :deep(blockquote) { border-left: 4px solid var(--link-active); padding-left: 1rem; color: var(--link-color); }
 :deep(ul), :deep(ol) { padding-left: 20px; }
 :deep(a) { color: #58a6ff; text-decoration: none; }
-
-/* RWD */
-@media (max-width: 768px) {
-  .editor-area { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
-  .sidebar { position: absolute; height: 100%; z-index: 50; }
-  .sidebar.closed { transform: translateX(-100%); width: 280px; }
-}
 </style>

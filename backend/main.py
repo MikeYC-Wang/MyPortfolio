@@ -1,15 +1,29 @@
 import os
 import shutil
 import uuid
-from fastapi import FastAPI, Depends, HTTPException, File, UploadFile
+import datetime
+from fastapi import FastAPI, Depends, HTTPException, File, UploadFile, Request, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, TIMESTAMP
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.sql import func
+from passlib.context import CryptContext # ✨ 密碼加密
+from jose import JWTError, jwt # ✨ JWT Token
+
+# ==========================================
+# 0. 安全設定 (JWT & Password)
+# ==========================================
+SECRET_KEY = "CHANGE_THIS_TO_A_VERY_SECRET_KEY" # ⚠️ 真實上線請改掉這串
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
 
 # ==========================================
 # 1. 資料庫連線設定
@@ -23,6 +37,7 @@ Base = declarative_base()
 # ==========================================
 # 2. 資料庫模型 (DB Models)
 # ==========================================
+# ... (ProjectModel, CodeSnippetModel, PostModel, SkillModel 保持不變) ...
 class ProjectModel(Base):
     __tablename__ = "projects"
     id = Column(Integer, primary_key=True, index=True)
@@ -57,9 +72,26 @@ class SkillModel(Base):
     score = Column(Integer)
     skill_order = Column(Integer, default=0)
 
+# ✨ 新增：管理員帳號表
+class AdminModel(Base):
+    __tablename__ = "admins"
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
+
+# ✨ 新增：登入嘗試紀錄表 (Log)
+class LoginLogModel(Base):
+    __tablename__ = "login_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    ip_address = Column(String)
+    username_attempt = Column(String)
+    is_success = Column(Boolean)
+    attempt_time = Column(TIMESTAMP, server_default=func.now())
+
 # ==========================================
 # 3. 傳輸模型 (Pydantic Schemas)
 # ==========================================
+# ... (ProjectSchema, CodeSnippetSchema, PostSchema, SkillSchema 保持不變) ...
 class ProjectSchema(BaseModel):
     id: int
     title: str
@@ -97,7 +129,6 @@ class PostCreate(BaseModel):
     cover_image: Optional[str] = None
     is_published: bool = True
 
-# ✨ 新增：更新文章用的 Schema (跟 Create 一樣，但為了語意清楚分開定義)
 class PostUpdate(BaseModel):
     title: str
     content: str
@@ -110,12 +141,19 @@ class SkillSchema(BaseModel):
     class Config:
         from_attributes = True
 
+# ✨ Token 回傳模型
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
 # ==========================================
-# 4. FastAPI 主程式與路由
+# 4. FastAPI 主程式與工具函式
 # ==========================================
 app = FastAPI()
 
-# 允許跨域 (CORS)
+# 自動建表
+Base.metadata.create_all(bind=engine)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -137,28 +175,106 @@ def get_db():
     finally:
         db.close()
 
+# --- 密碼與 Token 工具 ---
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+# --- 啟動事件：自動建立預設管理員 ---
+@app.on_event("startup")
+def create_default_admin():
+    db = SessionLocal()
+    admin = db.query(AdminModel).filter(AdminModel.username == "admin").first()
+    if not admin:
+        print("⚠️ 建立預設管理員帳號: admin / admin123")
+        hashed_pwd = get_password_hash("admin123")
+        new_admin = AdminModel(username="admin", hashed_password=hashed_pwd)
+        db.add(new_admin)
+        db.commit()
+    db.close()
+
+# ==========================================
+# 5. API 路由
+# ==========================================
+
 @app.get("/")
 def read_root():
-    return {"message": "全端核心 V2.4 (管理升級版) 啟動成功！"}
+    return {"message": "全端核心 V3.0 (安全登入版) 啟動成功！"}
 
-# --- 圖片上傳 API ---
+# ✨ 登入 API (核心邏輯)
+@app.post("/api/login", response_model=Token)
+def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    # 1. 取得 Client IP
+    client_ip = request.client.host
+    
+    # 2. 檢查過去 10 分鐘內的失敗次數
+    ten_mins_ago = datetime.datetime.utcnow() - datetime.timedelta(minutes=10)
+    failed_attempts = db.query(LoginLogModel).filter(
+        LoginLogModel.ip_address == client_ip,
+        LoginLogModel.is_success == False,
+        LoginLogModel.attempt_time >= ten_mins_ago
+    ).count()
+
+    if failed_attempts >= 3:
+        # 紀錄這次被阻擋的嘗試
+        log = LoginLogModel(ip_address=client_ip, username_attempt=form_data.username, is_success=False)
+        db.add(log)
+        db.commit()
+        # 雖然密碼可能對，但因為嘗試太多次被鎖定
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"嘗試失敗次數過多 ({failed_attempts + 1}次)，請稍後再試。",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # 3. 驗證帳號密碼
+    admin = db.query(AdminModel).filter(AdminModel.username == form_data.username).first()
+    
+    if not admin or not verify_password(form_data.password, admin.hashed_password):
+        # 登入失敗 -> 寫入 Log
+        log = LoginLogModel(ip_address=client_ip, username_attempt=form_data.username, is_success=False)
+        db.add(log)
+        db.commit()
+        
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="帳號或密碼錯誤",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # 4. 登入成功 -> 寫入 Log
+    log = LoginLogModel(ip_address=client_ip, username_attempt=form_data.username, is_success=True)
+    db.add(log)
+    db.commit()
+
+    # 5. 發放 Token
+    access_token = create_access_token(data={"sub": admin.username})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+# --- 圖片上傳 (保持不變) ---
 @app.post("/api/upload")
 async def upload_image(file: UploadFile = File(...)):
     file_ext = file.filename.split(".")[-1]
     file_name = f"{uuid.uuid4()}.{file_ext}"
     file_path = f"{UPLOAD_DIR}/{file_name}"
-    
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-    
     return {"url": f"/static/uploads/{file_name}"}
 
-# --- 專案 API ---
+# --- 專案、特效、技能、文章 API (保持不變，略作縮減以節省篇幅) ---
 @app.get("/api/projects", response_model=List[ProjectSchema])
 def get_projects(db: Session = Depends(get_db)):
     return db.query(ProjectModel).all()
 
-# --- 特效程式碼 API ---
 @app.get("/api/snippets", response_model=List[CodeSnippetSchema])
 def get_snippets(db: Session = Depends(get_db)):
     return db.query(CodeSnippetModel).filter(CodeSnippetModel.is_published == True).order_by(CodeSnippetModel.id.desc()).all()
@@ -171,21 +287,14 @@ def create_snippet(snippet: CodeSnippetCreate, db: Session = Depends(get_db)):
     db.refresh(db_snippet)
     return db_snippet
 
-# --- 技能 API ---
 @app.get("/api/skills", response_model=List[SkillSchema])
 def get_skills(db: Session = Depends(get_db)):
     return db.query(SkillModel).order_by(SkillModel.skill_order).all()
 
-# --- 部落格文章 API (完整 CRUD) ---
-
-# 1. 取得所有文章
 @app.get("/api/posts", response_model=List[PostSchema])
 def get_posts(db: Session = Depends(get_db)):
-    # 這裡改成回傳「所有」文章(包含隱藏的)，方便後台管理，或者你可以另外寫一個 api/admin/posts
-    # 為了簡單，目前先回傳全部，並依 ID 倒序排列 (新文章在前)
     return db.query(PostModel).order_by(PostModel.id.desc()).all()
 
-# 2. 取得單篇文章
 @app.get("/api/posts/{post_id}", response_model=PostSchema)
 def get_post(post_id: int, db: Session = Depends(get_db)):
     post = db.query(PostModel).filter(PostModel.id == post_id).first()
@@ -193,7 +302,6 @@ def get_post(post_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="文章不存在")
     return post
 
-# 3. 新增文章
 @app.post("/api/posts", response_model=PostSchema)
 def create_post(post: PostCreate, db: Session = Depends(get_db)):
     db_post = PostModel(**post.dict())
@@ -202,30 +310,24 @@ def create_post(post: PostCreate, db: Session = Depends(get_db)):
     db.refresh(db_post)
     return db_post
 
-# 4. ✨ 更新文章 (PUT)
 @app.put("/api/posts/{post_id}", response_model=PostSchema)
 def update_post(post_id: int, post: PostUpdate, db: Session = Depends(get_db)):
     db_post = db.query(PostModel).filter(PostModel.id == post_id).first()
     if not db_post:
         raise HTTPException(status_code=404, detail="文章不存在")
-    
-    # 更新欄位
     db_post.title = post.title
     db_post.content = post.content
     db_post.cover_image = post.cover_image
     db_post.is_published = post.is_published
-    
     db.commit()
     db.refresh(db_post)
     return db_post
 
-# 5. ✨ 刪除文章 (DELETE)
 @app.delete("/api/posts/{post_id}")
 def delete_post(post_id: int, db: Session = Depends(get_db)):
     db_post = db.query(PostModel).filter(PostModel.id == post_id).first()
     if not db_post:
         raise HTTPException(status_code=404, detail="文章不存在")
-    
     db.delete(db_post)
     db.commit()
     return {"message": "刪除成功"}
