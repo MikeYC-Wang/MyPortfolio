@@ -2,6 +2,7 @@ import os
 import shutil
 import uuid
 import datetime
+from dotenv import load_dotenv # 載入環境變數
 from fastapi import FastAPI, Depends, HTTPException, File, UploadFile, Request, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,23 +13,29 @@ from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, TI
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.sql import func
-from passlib.context import CryptContext # ✨ 密碼加密
-from jose import JWTError, jwt # ✨ JWT Token
+from passlib.context import CryptContext # 密碼加密
+from jose import JWTError, jwt # JWT Token
 
 # ==========================================
-# 0. 安全設定 (JWT & Password)
+# 0. 環境變數與安全設定
 # ==========================================
-SECRET_KEY = "CHANGE_THIS_TO_A_VERY_SECRET_KEY" # ⚠️ 真實上線請改掉這串
+# 載入 .env 檔案
+load_dotenv()
+
+# 從環境變數讀取設定，若讀取不到則使用預設值 (建議正式環境務必設定 .env)
+SECRET_KEY = os.getenv("SECRET_KEY", "default_secret_key_change_me")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
+# 密碼加密設定
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
 
 # ==========================================
 # 1. 資料庫連線設定
 # ==========================================
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:Day25143@localhost:5432/portfolio_db"
+# 從環境變數讀取資料庫連線字串
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:Day25143@localhost:5432/portfolio_db")
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -37,7 +44,7 @@ Base = declarative_base()
 # ==========================================
 # 2. 資料庫模型 (DB Models)
 # ==========================================
-# ... (ProjectModel, CodeSnippetModel, PostModel, SkillModel 保持不變) ...
+
 class ProjectModel(Base):
     __tablename__ = "projects"
     id = Column(Integer, primary_key=True, index=True)
@@ -72,14 +79,14 @@ class SkillModel(Base):
     score = Column(Integer)
     skill_order = Column(Integer, default=0)
 
-# ✨ 新增：管理員帳號表
+# 管理員帳號表
 class AdminModel(Base):
     __tablename__ = "admins"
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
 
-# ✨ 新增：登入嘗試紀錄表 (Log)
+# 登入嘗試紀錄表 (Log)
 class LoginLogModel(Base):
     __tablename__ = "login_logs"
     id = Column(Integer, primary_key=True, index=True)
@@ -91,7 +98,7 @@ class LoginLogModel(Base):
 # ==========================================
 # 3. 傳輸模型 (Pydantic Schemas)
 # ==========================================
-# ... (ProjectSchema, CodeSnippetSchema, PostSchema, SkillSchema 保持不變) ...
+
 class ProjectSchema(BaseModel):
     id: int
     title: str
@@ -141,7 +148,7 @@ class SkillSchema(BaseModel):
     class Config:
         from_attributes = True
 
-# ✨ Token 回傳模型
+# Token 回傳模型
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -189,17 +196,31 @@ def create_access_token(data: dict):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-# --- 啟動事件：自動建立預設管理員 ---
+# --- 啟動事件：從 .env 建立管理員 ---
 @app.on_event("startup")
-def create_default_admin():
+def create_admin_from_env():
     db = SessionLocal()
-    admin = db.query(AdminModel).filter(AdminModel.username == "admin").first()
+    
+    # 從環境變數讀取帳號密碼
+    env_user = os.getenv("ADMIN_USER")
+    env_pass = os.getenv("ADMIN_PASSWORD")
+
+    # 如果 .env 沒設定，則不執行建立動作
+    if not env_user or not env_pass:
+        print("Warning: ADMIN_USER or ADMIN_PASSWORD not set in .env file. Skipping admin creation.")
+        db.close()
+        return
+
+    # 檢查該帳號是否已存在
+    admin = db.query(AdminModel).filter(AdminModel.username == env_user).first()
+    
     if not admin:
-        print("⚠️ 建立預設管理員帳號: admin / admin123")
-        hashed_pwd = get_password_hash("admin123")
-        new_admin = AdminModel(username="admin", hashed_password=hashed_pwd)
+        print(f"Creating admin account from .env: {env_user}")
+        hashed_pwd = get_password_hash(env_pass)
+        new_admin = AdminModel(username=env_user, hashed_password=hashed_pwd)
         db.add(new_admin)
         db.commit()
+    
     db.close()
 
 # ==========================================
@@ -208,9 +229,9 @@ def create_default_admin():
 
 @app.get("/")
 def read_root():
-    return {"message": "全端核心 V3.0 (安全登入版) 啟動成功！"}
+    return {"message": "Portfolio API V3.0 Running"}
 
-# ✨ 登入 API (核心邏輯)
+# --- 登入 API ---
 @app.post("/api/login", response_model=Token)
 def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     # 1. 取得 Client IP
@@ -229,10 +250,10 @@ def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestFor
         log = LoginLogModel(ip_address=client_ip, username_attempt=form_data.username, is_success=False)
         db.add(log)
         db.commit()
-        # 雖然密碼可能對，但因為嘗試太多次被鎖定
+        
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=f"嘗試失敗次數過多 ({failed_attempts + 1}次)，請稍後再試。",
+            detail=f"Too many failed attempts ({failed_attempts + 1}). Please try again later.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -247,7 +268,7 @@ def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestFor
         
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="帳號或密碼錯誤",
+            detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -260,7 +281,7 @@ def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestFor
     access_token = create_access_token(data={"sub": admin.username})
     return {"access_token": access_token, "token_type": "bearer"}
 
-# --- 圖片上傳 (保持不變) ---
+# --- 圖片上傳 ---
 @app.post("/api/upload")
 async def upload_image(file: UploadFile = File(...)):
     file_ext = file.filename.split(".")[-1]
@@ -270,7 +291,8 @@ async def upload_image(file: UploadFile = File(...)):
         shutil.copyfileobj(file.file, buffer)
     return {"url": f"/static/uploads/{file_name}"}
 
-# --- 專案、特效、技能、文章 API (保持不變，略作縮減以節省篇幅) ---
+# --- 其他 CRUD API ---
+
 @app.get("/api/projects", response_model=List[ProjectSchema])
 def get_projects(db: Session = Depends(get_db)):
     return db.query(ProjectModel).all()
@@ -299,7 +321,7 @@ def get_posts(db: Session = Depends(get_db)):
 def get_post(post_id: int, db: Session = Depends(get_db)):
     post = db.query(PostModel).filter(PostModel.id == post_id).first()
     if not post:
-        raise HTTPException(status_code=404, detail="文章不存在")
+        raise HTTPException(status_code=404, detail="Post not found")
     return post
 
 @app.post("/api/posts", response_model=PostSchema)
@@ -314,7 +336,7 @@ def create_post(post: PostCreate, db: Session = Depends(get_db)):
 def update_post(post_id: int, post: PostUpdate, db: Session = Depends(get_db)):
     db_post = db.query(PostModel).filter(PostModel.id == post_id).first()
     if not db_post:
-        raise HTTPException(status_code=404, detail="文章不存在")
+        raise HTTPException(status_code=404, detail="Post not found")
     db_post.title = post.title
     db_post.content = post.content
     db_post.cover_image = post.cover_image
@@ -327,7 +349,7 @@ def update_post(post_id: int, post: PostUpdate, db: Session = Depends(get_db)):
 def delete_post(post_id: int, db: Session = Depends(get_db)):
     db_post = db.query(PostModel).filter(PostModel.id == post_id).first()
     if not db_post:
-        raise HTTPException(status_code=404, detail="文章不存在")
+        raise HTTPException(status_code=404, detail="Post not found")
     db.delete(db_post)
     db.commit()
-    return {"message": "刪除成功"}
+    return {"message": "Deleted successfully"}
