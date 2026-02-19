@@ -402,9 +402,13 @@ def update_project(project_id: int, project: ProjectCreate, db: Session = Depend
     db.commit()
     return {"message": "Project updated"}
 
-# 3. 刪除專案
 @app.delete("/api/projects/{project_id}")
-async def delete_project(project_id: int, db=Depends(get_db)):
-    query = "DELETE FROM projects WHERE id = :id"
-    await db.execute(query=query, values={"id": project_id})
-    return {"message": "Project deleted"}
+def delete_project(project_id: int, db: Session = Depends(get_db)):
+    db_project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+    
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    db.delete(db_project)
+    db.commit()
+    
+    return {"message": "Project deleted successfully"}
