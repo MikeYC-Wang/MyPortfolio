@@ -2,6 +2,8 @@
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import { useRouter, useRoute } from 'vue-router';
+import { useToast } from 'vue-toastification';
+
 import '@/assets/css/lab-editor.css';
 import CodeMirror from 'vue-codemirror6';
 import { html } from '@codemirror/lang-html';
@@ -12,11 +14,11 @@ import { basicSetup } from 'codemirror';
 
 const router = useRouter();
 const route = useRoute();
+const toast = useToast();
 
 const snippetSlug = computed(() => route.params.slug);
 const isEditMode = computed(() => !!snippetSlug.value);
 
-// 資料狀態
 const title = ref('Untitled Pen');
 const description = ref('');
 const htmlCode = ref('');
@@ -24,12 +26,10 @@ const cssCode = ref('');
 const jsCode = ref('');
 const isSaving = ref(false);
 
-// --- CodeMirror 設定 ---
 const htmlExt = [basicSetup, html(), oneDark];
 const cssExt = [basicSetup, css(), oneDark];
 const jsExt = [basicSetup, javascript(), oneDark];
 
-// 載入舊資料 (透過 slug)
 const fetchOldData = async () => {
   if (!isEditMode.value) return;
   try {
@@ -40,12 +40,11 @@ const fetchOldData = async () => {
     cssCode.value = res.data.css_code;
     jsCode.value = res.data.js_code;
   } catch (error) {
-    alert('找不到該作品');
+    toast.error('找不到該作品');
     router.push('/lab');
   }
 };
 
-// 即時預覽 srcdoc
 const srcDoc = computed(() => {
   return `
     <!DOCTYPE html>
@@ -67,9 +66,11 @@ const srcDoc = computed(() => {
   `;
 });
 
-// 儲存或更新
 const saveSnippet = async () => {
-  if (!title.value.trim()) return alert('請輸入標題');
+  if (!title.value.trim()) {
+    toast.warning('請輸入標題');
+    return;
+  }
   isSaving.value = true;
   const payload = {
     title: title.value,
@@ -82,14 +83,14 @@ const saveSnippet = async () => {
   try {
     if (isEditMode.value) {
       await axios.put(`/api/snippets/${snippetSlug.value}`, payload);
-      alert('作品已更新！');
+      toast.success('作品已更新！');
     } else {
       await axios.post('/api/snippets', payload);
-      alert('作品儲存成功！');
+      toast.success('作品儲存成功！');
     }
     router.push('/lab');
   } catch (error) {
-    alert('操作失敗，請確認資料庫欄位');
+    toast.error('操作失敗，請確認資料庫欄位');
   } finally {
     isSaving.value = false;
   }

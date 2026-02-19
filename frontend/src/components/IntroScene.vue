@@ -33,7 +33,7 @@ let floatingElements: { sprite: THREE.Sprite; velocity: THREE.Vector3 }[] = [];
 let earthMesh: THREE.Points | null = null;
 let extraZoomDistance = 0;
 const MAX_EXTRA_ZOOM = 10;
-const BASE_CAMERA_Z = 6;
+let BASE_CAMERA_Z = window.innerWidth < 768 ? 10 : 6;
 
 // 互動與模型變數
 const raycaster = new THREE.Raycaster();
@@ -374,8 +374,8 @@ const setupScrollAnimation = () => {
   // 2. 設定相機最終位置
   // 以螢幕中心為基準，往 Z 軸拉出一段距離
   const endPos = screenCenter.clone();
-  endPos.z += 0.6; // 稍微拉遠一點點 (0.6)，避免穿模穿得太生硬
-  // endPos.y 保持與螢幕中心一致，這樣就是正視螢幕
+  const finalZoomZ = window.innerWidth < 768 ? 1.2 : 0.6;
+  endPos.z += finalZoomZ;
 
   const tl = gsap.timeline({
     scrollTrigger: {
@@ -491,9 +491,15 @@ const handleResize = () => {
   const height = window.innerHeight;
   const aspect = width / height;
 
+  BASE_CAMERA_Z = width < 768 ? 10 : 6;
+
   if (camera && renderer && hudCamera) {
     camera.aspect = aspect;
     camera.updateProjectionMatrix();
+
+    if (window.scrollY === 0) {
+      camera.position.set(0, 1.5, BASE_CAMERA_Z);
+    }
     
     hudCamera.left = -aspect;
     hudCamera.right = aspect;

@@ -5,11 +5,10 @@ import { useRouter } from 'vue-router';
 import MarkdownIt from 'markdown-it';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-dark.css';
+import { useToast } from 'vue-toastification';
 
-// ✨ 引入獨立的 CSS 檔案
 import '@/assets/css/admin.css';
 
-// 定義文章型別
 interface Post {
   id: number;
   title: string;
@@ -20,14 +19,13 @@ interface Post {
 }
 
 const router = useRouter();
+const toast = useToast();
 
-// --- 狀態變數 ---
 const posts = ref<Post[]>([]);
 const currentPostId = ref<number | null>(null);
 const isSubmitting = ref(false);
 const isUploading = ref(false);
 const isSidebarOpen = ref(true);
-
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
 
 const postForm = ref({
@@ -37,19 +35,14 @@ const postForm = ref({
   is_published: true
 });
 
-// --- 功能: 登出 ---
 const logout = () => {
-  // 清除 session storage 裡的 token
   sessionStorage.removeItem('admin_token');
-  alert('已成功登出');
-  // 跳轉回登入頁
+  toast.success('已成功登出系統');
   router.push('/login');
 };
 
-// --- 功能: Markdown 工具列輔助 ---
 const insertMarkdown = (type: string) => {
   if (!textareaRef.value) return;
-  
   const textarea = textareaRef.value;
   const start = textarea.selectionStart;
   const end = textarea.selectionEnd;
@@ -78,7 +71,6 @@ const insertMarkdown = (type: string) => {
   }, 0);
 };
 
-// --- API 操作 ---
 const fetchPosts = async () => {
   try {
     const res = await axios.get('/api/posts');
@@ -108,34 +100,32 @@ const handleDelete = async (id: number) => {
   if (!confirm('確定要刪除這篇文章嗎？此動作無法復原！')) return;
   try {
     await axios.delete(`/api/posts/${id}`);
-    alert('刪除成功');
+    toast.success('文章刪除成功');
     if (currentPostId.value === id) initCreateMode();
     fetchPosts();
   } catch (error) {
-    console.error(error);
-    alert('刪除失敗');
+    toast.error('文章刪除失敗');
   }
 };
 
 const submitPost = async () => {
   if (!postForm.value.title || !postForm.value.content) {
-    alert('標題與內容不能為空！');
+    toast.warning('標題與內容不能為空！');
     return;
   }
   isSubmitting.value = true;
   try {
     if (currentPostId.value) {
       await axios.put(`/api/posts/${currentPostId.value}`, postForm.value);
-      alert('文章更新成功！');
+      toast.success('文章更新成功！');
     } else {
       await axios.post('/api/posts', postForm.value);
-      alert('新文章發布成功！');
+      toast.success('新文章發布成功！');
       initCreateMode();
     }
     fetchPosts();
   } catch (error) {
-    console.error(error);
-    alert('操作失敗，請檢查後端連線');
+    toast.error('操作失敗，請檢查後端連線');
   } finally {
     isSubmitting.value = false;
   }
@@ -147,7 +137,7 @@ const handleFileUpload = async (event: Event) => {
     const file = target.files[0];
     const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
     if (!validTypes.includes(file.type)) {
-      alert('格式錯誤！僅允許上傳 JPG, PNG 或 GIF 圖片。');
+      toast.warning('格式錯誤！僅允許上傳 JPG, PNG 或 GIF 圖片。'); // ✨ 替換 alert
       target.value = '';
       return;
     }
@@ -157,17 +147,15 @@ const handleFileUpload = async (event: Event) => {
     try {
       const res = await axios.post('/api/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       postForm.value.cover_image = `http://127.0.0.1:8000${res.data.url}`;
-      alert('圖片上傳成功！');
+      toast.success('圖片上傳成功！');
     } catch (error) {
-      console.error('上傳失敗', error);
-      alert('圖片上傳失敗');
+      toast.error('圖片上傳失敗');
     } finally {
       isUploading.value = false;
     }
   }
 };
 
-// --- Markdown 設定 ---
 const escapeHtml = (unsafe: string): string => {
   return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 };

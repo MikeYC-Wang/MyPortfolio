@@ -69,3 +69,14 @@ body {
 button {
   font-family: inherit;
 }
+
+/* --- 隱藏桌機版的原生滑鼠游標 --- */
+@media (min-width: 769px) {
+  *, *::before, *::after {
+    cursor: none !important;
+  }
+
+  input, textarea, [contenteditable="true"], .cm-content, .cm-content * {
+    cursor: text !important;
+  }
+}
