@@ -2,15 +2,18 @@
 import { ref } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
+import { useToast } from 'vue-toastification';
 import '@/assets/css/login.css';
 import '@/assets/css/Theme.css';
 
 const router = useRouter();
+const toast = useToast();
+
 const username = ref('');
 const password = ref('');
 const errorMsg = ref('');
 const isLoading = ref(false);
-const showPassword = ref(false); // ✨ 控制密碼顯示狀態
+const showPassword = ref(false);
 
 const handleLogin = async () => {
   errorMsg.value = '';
@@ -23,12 +26,17 @@ const handleLogin = async () => {
   try {
     const res = await axios.post('/api/login', formData);
     sessionStorage.setItem('admin_token', res.data.access_token);
+
+    toast.success('登入成功！'); 
     setTimeout(() => { router.push('/admin'); }, 500);
+    
   } catch (error: any) {
     if (error.response && error.response.status === 429) {
       errorMsg.value = '錯誤次數過多，請稍後再試。';
+      toast.error('錯誤次數過多，請稍後再試。');
     } else {
       errorMsg.value = '帳號或密碼錯誤';
+      toast.error('登入失敗，請確認帳號密碼。');
     }
   } finally {
     isLoading.value = false;

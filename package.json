@@ -3,6 +3,7 @@
     "@amcharts/amcharts5": "^5.14.4",
     "@types/html2canvas": "^0.5.35",
     "gsap": "^3.13.0",
-    "html2canvas": "^1.4.1"
+    "html2canvas": "^1.4.1",
+    "vue-toastification": "^2.0.0-rc.5"
   }
 }
