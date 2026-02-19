@@ -91,7 +91,7 @@ defineProps<{ isDark: boolean }>();
 .section-header { text-align: center; margin-bottom: 50px; opacity: 0; transform: translateY(30px); transition: all 0.8s ease; }
 .section-header.visible { opacity: 1; transform: translateY(0); }
 h2 { font-size: 2.5rem; margin-bottom: 10px; color: inherit; }
-.subtitle { color: #888; font-size: 1.1rem; }
+.subtitle { color: #888; font-size: 1.1rem; margin-bottom: 33.2px;}
 .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
 
 @media (max-width: 768px) { .content-grid { grid-template-columns: 1fr; } }

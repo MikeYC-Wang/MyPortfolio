@@ -280,7 +280,7 @@ async def upload_image(file: UploadFile = File(...)):
 # --- Projects ---
 @app.get("/api/projects", response_model=List[ProjectSchema])
 def get_projects(db: Session = Depends(get_db)):
-    return db.query(ProjectModel).all()
+    return db.query(ProjectModel).order_by(ProjectModel.id.asc()).all()
 
 # --- Code Snippets (Playground) ---
 @app.get("/api/snippets", response_model=List[CodeSnippetSchema])

@@ -97,10 +97,26 @@ h2 {
   background: var(--gradient-text); 
   -webkit-background-clip: text; 
   background-clip: text; 
-  
   -webkit-text-fill-color: transparent; 
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.excerpt { color: var(--link-color); font-size: 0.95rem; line-height: 1.6; flex-grow: 1; margin-bottom: 1.5rem; }
+
+.excerpt { 
+  color: var(--link-color); 
+  font-size: 0.95rem; 
+  line-height: 1.6; 
+  flex-grow: 1; 
+  margin-bottom: 1.5rem; 
+  word-break: break-all; 
+  overflow-wrap: break-word; 
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
 
 .read-more-btn {
   align-self: flex-start;
