@@ -103,6 +103,11 @@ class ProjectSchema(BaseModel):
     class Config:
         from_attributes = True
 
+class ProjectCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    tech_stack: Optional[str] = None
+
 class CodeSnippetCreate(BaseModel):
     title: str
     description: Optional[str] = ""
@@ -333,7 +338,7 @@ def get_skills(db: Session = Depends(get_db)):
 # --- Posts (Blog) ---
 @app.get("/api/posts", response_model=List[PostSchema])
 def get_posts(db: Session = Depends(get_db)):
-    return db.query(PostModel).order_by(PostModel.id.desc()).all()
+    return db.query(PostModel).order_by(PostModel.id.asc()).all()
 
 @app.get("/api/posts/{post_id}", response_model=PostSchema)
 def get_post(post_id: int, db: Session = Depends(get_db)):
@@ -371,3 +376,35 @@ def delete_post(post_id: int, db: Session = Depends(get_db)):
     db.delete(db_post)
     db.commit()
     return {"message": "Deleted successfully"}
+
+# --- 專案作品管理 API ---
+
+# 1. 新增專案 (ORM 版)
+@app.post("/api/projects")
+def create_project(project: ProjectCreate, db: Session = Depends(get_db)):
+    db_project = ProjectModel(**project.dict())
+    db.add(db_project)
+    db.commit()
+    db.refresh(db_project)
+    return {"id": db_project.id, "message": "Project created"}
+
+# 2. 更新專案 (ORM 版)
+@app.put("/api/projects/{project_id}")
+def update_project(project_id: int, project: ProjectCreate, db: Session = Depends(get_db)):
+    db_project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    db_project.title = project.title
+    db_project.description = project.description
+    db_project.tech_stack = project.tech_stack
+    
+    db.commit()
+    return {"message": "Project updated"}
+
+# 3. 刪除專案
+@app.delete("/api/projects/{project_id}")
+async def delete_project(project_id: int, db=Depends(get_db)):
+    query = "DELETE FROM projects WHERE id = :id"
+    await db.execute(query=query, values={"id": project_id})
+    return {"message": "Project deleted"}
