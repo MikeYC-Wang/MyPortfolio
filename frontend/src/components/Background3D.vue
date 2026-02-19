@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import * as THREE from 'three';
 
-const props = defineProps<{ isDark: boolean }>();
+const props = defineProps<{ isDark: boolean; isReady?: boolean }>();
 const containerRef = ref<HTMLDivElement | null>(null);
 
 let scene: THREE.Scene;
@@ -86,6 +86,8 @@ const onWindowResize = () => {
 const animate = () => {
   animationId = requestAnimationFrame(animate);
 
+  if (!props.isReady) return;
+  
   if (stars && material) {
     // 1. 極緩慢旋轉 (幾乎靜止，但有一點點生命力)
     stars.rotation.y += 0.0002; 

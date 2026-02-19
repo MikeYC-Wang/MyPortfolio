@@ -235,7 +235,7 @@ const initScene = async () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
   containerRef.value.appendChild(renderer.domElement);
   renderer.autoClear = false; 
-  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.enabled = false;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.2;
 
@@ -255,7 +255,7 @@ const initScene = async () => {
   scene.add(ambientLight);
   const dirLight = new THREE.DirectionalLight(0xffffff, 2);
   dirLight.position.set(5, 10, 7);
-  dirLight.castShadow = true;
+  dirLight.castShadow = false;
   scene.add(dirLight);
   const fillLight = new THREE.PointLight(0x4455ff, 1);
   fillLight.position.set(-5, 2, 3);
@@ -463,6 +463,7 @@ const onClick = () => {
 
 const animate = () => {
   animationId = requestAnimationFrame(animate);
+  if (document.querySelector('.hacker-intro')) return;
   if (!isRendering.value) return;
   if (controls) controls.update();
   
@@ -476,11 +477,32 @@ const animate = () => {
   });
 
   if (earthMesh) earthMesh.rotation.y += 0.002; 
-  if (screenTexture) screenTexture.needsUpdate = true;
+  if (screenTexture && renderer) {
+      if (startHintSprite && !startHintSprite.visible) {
+          // 點擊開機後，每 3 幀更新一次畫面就好 (約 20 FPS)
+          if (renderer.info.render.frame % 3 === 0) {
+              screenTexture.needsUpdate = true;
+          }
+      } else if (renderer.info.render.frame < 10) {
+          // 剛進網頁時，更新前幾幀確保「全黑畫面」有成功貼到 3D 螢幕上
+          screenTexture.needsUpdate = true;
+      }
+  }
 
   if (startHintSprite && startHintSprite.visible) {
       const time = Date.now() * 0.003;
       startHintSprite.position.y += Math.sin(time) * 0.0005; 
+  }
+
+  if (renderer.info.render.frame % 5 === 0 && pcCaseObject && camera) {
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObject(pcCaseObject, true);
+      const isInteracting = intersects.length > 0;
+      
+      if (isInteracting !== isHoveringPc) {
+          isHoveringPc = isInteracting;
+          if (canvasRef.value) canvasRef.value.style.cursor = isHoveringPc ? 'pointer' : 'default';
+      }
   }
 
   if (renderer && scene && camera && hudScene && hudCamera) {

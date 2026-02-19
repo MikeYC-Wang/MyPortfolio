@@ -14,19 +14,11 @@ const enTextRef = ref<HTMLElement | null>(null);
 
 let animationFrameId: number;
 
-// --- 📝 自我介紹腳本內容 ---
+// --- 📝 自我介紹 ---
 const introSequence = [
   {
     cn: "哈囉，我是 Mike",
     en: "Hello, I am MIKE."
-  },
-  {
-    cn: "熱愛網頁前端技術",
-    en: "Passionate About Frontend Technology."
-  },
-  {
-    cn: "享受 Coding 的樂趣！",
-    en: "Pure Enjoyment Of Coding!"
   },
   {
     cn: "歡迎來到我的網站！",
@@ -141,13 +133,12 @@ onMounted(() => {
     if (index < introSequence.length - 1) {
       tl.to([cnTextRef.value, enTextRef.value], {
         opacity: 0,
-        blur: 5,
-        duration: 0.6, // 🔴 退場時間拉長，更優雅
-        y: -50, // 🔴 往上滑動距離加大 (原本是 -15)
+        duration: 0.6, 
+        y: -50, 
         ease: "power2.in"
       });
-      // 重置狀態
-      tl.set([cnTextRef.value, enTextRef.value], { y: 0, blur: 0, opacity: 1, text: "" }); 
+
+      tl.set([cnTextRef.value, enTextRef.value], { y: 0, opacity: 1, text: "" }); 
     }
   });
 
