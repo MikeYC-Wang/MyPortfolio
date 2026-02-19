@@ -84,7 +84,7 @@ const experiences = [
     ]
   },
   {
-    title: '值班經理 / 訓練員',
+    title: '值班 / 訓練員',
     company: '摩斯漢堡 (基隆)',
     duration: '2019.04 - 2025.05',
     icon: 'fa-solid fa-burger',

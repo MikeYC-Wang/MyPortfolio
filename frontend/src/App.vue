@@ -107,7 +107,7 @@ header {
 /* 文字連結區塊 */
 .nav-links {
   display: flex;
-  gap: 20px;
+  gap: 50px;
 }
 
 /* 連結樣式 (只針對 .nav-links 內的 a 標籤) */

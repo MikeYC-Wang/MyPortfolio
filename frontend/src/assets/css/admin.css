@@ -1,6 +1,6 @@
 /* --- AdminView 專用樣式 --- */
 
-/* 修正: 全面改用 CSS 變數以支援淺色模式 */
+/* 支援淺色模式 */
 .admin-wrapper {
   display: flex;
   height: calc(100vh - 80px);
@@ -149,7 +149,7 @@
 .publish-btn.update-mode { background: #e0a800; }
 .publish-btn.update-mode:hover { background: #c69500; }
 
-/* ✨ 新增登出按鈕樣式 */
+/* 登出按鈕樣式 */
 .logout-btn {
   background: #dc3545; /* 紅色系 */
   color: white;
@@ -178,7 +178,14 @@
   box-sizing: border-box;
 }
 
-.upload-group { display: flex; align-items: center; gap: 15px; }
+.upload-group { 
+  display: flex; 
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+}
+
 .upload-btn {
   background: var(--btn-bg);
   color: var(--text-color);
@@ -189,17 +196,26 @@
   align-items: center;
   gap: 8px;
   border: 1px solid var(--border-color);
+  white-space: nowrap; 
+  transition: 0.2s;
 }
-.upload-btn:hover { background: var(--btn-hover); }
 
-.file-input { display: none; }
+.upload-btn:hover { 
+  background: var(--btn-hover); 
+}
+
+.file-input { 
+  display: none; 
+}
+
 .url-input { 
-  flex-grow: 1; 
-  padding: 10px; 
+  width: 100%;
+  padding: 12px 15px; 
   background: var(--card-bg); 
   border: 1px solid var(--border-color); 
   color: var(--text-color); 
   border-radius: 6px; 
+  box-sizing: border-box; 
 }
 
 .image-preview { height: 40px; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-color); }

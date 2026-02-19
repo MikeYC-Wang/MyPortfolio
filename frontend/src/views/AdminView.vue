@@ -249,25 +249,26 @@ onMounted(() => {
         </div>
       </div>
 
-      <div class="form-grid">
-        <div class="input-group">
-          <input v-model="postForm.title" type="text" placeholder="請輸入文章標題..." class="title-input" />
-        </div>
+        <div class="form-grid">
+            <div class="input-group">
+            <input v-model="postForm.title" type="text" placeholder="請輸入文章標題..." class="title-input" />
+            </div>
 
-        <div class="input-group upload-group">
-          <label class="upload-btn">
-            <i class="fa-solid fa-cloud-arrow-up"></i> 
-            <span v-if="isUploading">上傳中...</span>
-            <span v-else>上傳封面</span>
-            <input type="file" @change="handleFileUpload" accept="image/*" class="file-input" />
-          </label>
+            <div class="input-group upload-group">
+            <label class="upload-btn">
+                <i class="fa-solid fa-cloud-arrow-up"></i> 
+                <span v-if="isUploading">上傳中...</span>
+                <span v-else>上傳封面</span>
+                <input type="file" @change="handleFileUpload" accept="image/*" class="file-input" />
+            </label>
 
-          <div v-if="postForm.cover_image" class="image-preview">
-            <img :src="postForm.cover_image" alt="Cover Preview" />
-          </div>
-          <input v-else v-model="postForm.cover_image" type="text" placeholder="或貼上圖片網址..." class="url-input" />
+            <div v-if="postForm.cover_image" class="image-preview">
+                <img :src="postForm.cover_image" alt="Cover Preview" />
+            </div>
+            
+            <input v-else v-model="postForm.cover_image" type="text" placeholder="或貼上圖片網址..." class="url-input" />
+            </div>
         </div>
-      </div>
 
       <div class="editor-area">
         <div class="editor-pane">
