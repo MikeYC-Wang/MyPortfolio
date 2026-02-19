@@ -37,17 +37,17 @@ onMounted(() => {
     />
 
     <header>
-      <nav class="nav-left">
-        <RouterLink to="/">首頁</RouterLink>
-        <RouterLink to="/lab">靈感碎片</RouterLink>
-        <RouterLink to="/blog">個人部落格</RouterLink>
-        <RouterLink to="/admin">後台管理</RouterLink>
-      </nav>
-
-      <div class="nav-center">
-        <RouterLink to="/">
+      <div class="nav-left">
+        <RouterLink to="/" class="logo-link">
           <img src="/logo.png" alt="MikeYC Logo" class="site-logo" />
         </RouterLink>
+
+        <nav class="nav-links">
+          <RouterLink to="/">首頁</RouterLink>
+          <RouterLink to="/lab">靈感碎片</RouterLink>
+          <RouterLink to="/blog">個人部落格</RouterLink>
+          <RouterLink to="/admin">後台管理</RouterLink>
+        </nav>
       </div>
 
       <div class="actions nav-right">
@@ -66,7 +66,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-
 .app-wrapper { min-height: 100vh; }
 
 header {
@@ -76,64 +75,84 @@ header {
   height: 80px;
   box-sizing: border-box;
   padding: 0 40px;
-  background: var(--nav-bg); /* 使用變數 */
+  background: var(--nav-bg);
   backdrop-filter: blur(15px);
   z-index: 100;
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between; /* 左右推開 */
   align-items: center;
-  border-bottom: 1px solid var(--border-color); /* 使用變數 */
+  border-bottom: 1px solid var(--border-color);
   transition: background 0.5s, border 0.5s;
 }
 
-/* 左側與右側區域 */
-.nav-left, .nav-right {
+/* --- 左側區域 (Logo + 連結) --- */
+.nav-left {
   display: flex;
   align-items: center;
-  gap: 20px;
-  z-index: 2; /* 確保在 Logo 上層 */
+  gap: 40px;
 }
 
-/* 連結樣式 */
-.nav-left a {
-  color: var(--link-color); /* 使用變數 */
-  text-decoration: none;
-  font-weight: bold;
-  font-size: 1rem;
-  transition: 0.3s;
-  padding: 8px 0;
-}
-
-.nav-left a:hover, .nav-left a.router-link-active { 
-  color: var(--link-active); /* 使用變數 */
-}
-
-/* ✨ Logo 絕對置中設定 */
-.nav-center {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 1;
-}
-
+/* Logo 樣式 */
 .site-logo {
-  height: 50px; /* 根據 Logo 實際大小調整 */
+  height: 50px;
   width: auto;
   display: block;
   transition: transform 0.3s ease;
 }
 
 .site-logo:hover {
-  transform: scale(1.05);
+  transform: scale(1.05) rotate(-3deg);
 }
 
-/* 主題按鈕 */
+/* 文字連結區塊 */
+.nav-links {
+  display: flex;
+  gap: 20px;
+}
+
+/* 連結樣式 (只針對 .nav-links 內的 a 標籤) */
+.nav-links a {
+  color: var(--link-color);
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 1rem;
+  transition: 0.3s;
+  padding: 8px 0;
+  position: relative; /* 為了做底線特效 */
+}
+
+.nav-links a:hover, .nav-links a.router-link-active { 
+  color: var(--link-active);
+}
+
+/* 下底線特效 (選用) */
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: 0;
+  left: 0;
+  background-color: var(--link-active);
+  transition: width 0.3s;
+}
+
+.nav-links a:hover::after, .nav-links a.router-link-active::after {
+  width: 100%;
+}
+
+/* --- 右側區域 (按鈕) --- */
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
 .theme-btn {
-  background: var(--btn-bg); /* 使用變數 */
+  background: var(--btn-bg);
   border: 1px solid transparent; 
   cursor: pointer;
-  color: var(--text-color); /* 使用變數 */
+  color: var(--text-color);
   padding: 8px 16px;
   border-radius: 20px;
   transition: 0.3s;
@@ -145,7 +164,6 @@ header {
   white-space: nowrap;
 }
 
-/* Dark Mode 強制顯示邊框 (需要用 global 因為 body 樣式在外面) */
 :global(body.theme-dark) .theme-btn {
   border: 1px solid var(--border-color);
 }
