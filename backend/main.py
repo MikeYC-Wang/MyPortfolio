@@ -402,6 +402,7 @@ def update_project(project_id: int, project: ProjectCreate, db: Session = Depend
     db.commit()
     return {"message": "Project updated"}
 
+# 3. 刪除專案 (ORM 版)
 @app.delete("/api/projects/{project_id}")
 def delete_project(project_id: int, db: Session = Depends(get_db)):
     db_project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import axios from 'axios';
 import { useTheme } from '@/composables/useTheme';
 
@@ -33,6 +33,89 @@ const handleEnterSite = async () => {
   }
 };
 
+// ==========================================
+// === 專案輪播邏輯 (Carousel Logic) ===
+// ==========================================
+const currentIndex = ref(0);
+const itemsPerView = ref(5); 
+const gap = 20; // 卡片間距 20px
+let autoplayTimer: number | null = null;
+
+// 計算最多可以按幾次下一頁
+const maxIndex = computed(() => Math.max(0, projects.value.length - itemsPerView.value));
+
+// 1. RWD：根據螢幕寬度自動調整顯示數量，確保卡片不會太窄
+const updateItemsPerView = () => {
+  const width = window.innerWidth;
+  if (width < 768) itemsPerView.value = 1;
+  else if (width < 1024) itemsPerView.value = 2;
+  else if (width < 1440) itemsPerView.value = 3; // 一般筆電或螢幕顯示 3 個
+  else if (width < 1600) itemsPerView.value = 4; // 較大螢幕顯示 4 個
+  else itemsPerView.value = 5; // 超大寬螢幕才顯示 5 個
+  
+  // 如果視窗縮小導致當前 index 超出最大值，強制拉回
+  if (currentIndex.value > maxIndex.value) {
+    currentIndex.value = maxIndex.value;
+  }
+};
+
+// 下一頁
+const nextSlide = () => {
+  if (currentIndex.value < maxIndex.value) currentIndex.value++;
+  else currentIndex.value = 0; // 循環播放
+};
+
+// 上一頁
+const prevSlide = () => {
+  if (currentIndex.value > 0) currentIndex.value--;
+  else currentIndex.value = maxIndex.value; // 循環播放
+};
+
+// 點擊小點點跳轉
+const goToSlide = (index: number) => {
+  currentIndex.value = index;
+};
+
+// 開始自動輪播
+const startAutoplay = () => {
+  if (autoplayTimer) window.clearInterval(autoplayTimer); // 避免重複設定
+  if (projects.value.length > itemsPerView.value) {
+    autoplayTimer = window.setInterval(nextSlide, 3500); // 3.5秒換一張
+  }
+};
+
+// 暫停自動輪播 (滑鼠移入時觸發)
+const pauseAutoplay = () => {
+  if (autoplayTimer) window.clearInterval(autoplayTimer);
+};
+
+// 2. 動態計算輪播軌道的移動距離與對齊方式
+const trackStyle = computed(() => {
+  // 判斷是否需要置中 (當總數量 <= 當前螢幕應該顯示的數量時)
+  const shouldCenter = projects.value.length <= itemsPerView.value;
+  
+  return {
+    transform: `translateX(calc(-${currentIndex.value} * ((100% + ${gap}px) / ${itemsPerView.value})))`,
+    transition: 'transform 0.5s ease-in-out',
+    display: 'flex',
+    gap: `${gap}px`,
+    width: '100%',
+    justifyContent: shouldCenter ? 'center' : 'flex-start' // 數量不足時強制置中
+  };
+});
+
+// 3. 動態計算每張卡片的精確寬度
+const cardStyle = computed(() => {
+  const cardWidth = `calc((100% - ${gap * (itemsPerView.value - 1)}px) / ${itemsPerView.value})`;
+  return {
+    flex: `0 0 ${cardWidth}`,
+    maxWidth: cardWidth // 強制最大寬度，防止卡片被意外擠壓或撐開
+  };
+});
+
+// ==========================================
+// === 生命週期 (Lifecycle) ===
+// ==========================================
 onMounted(async () => {
   initTheme();
   
@@ -43,10 +126,20 @@ onMounted(async () => {
   try {
     const response = await axios.get('/api/projects');
     projects.value = response.data;
+
+    updateItemsPerView();
+    window.addEventListener('resize', updateItemsPerView);
+    startAutoplay();
+    
   } catch (err) {
     console.error(err);
     errorMsg.value = '無法連線到後端';
   }
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateItemsPerView);
+  pauseAutoplay();
 });
 </script>
 
@@ -70,37 +163,56 @@ onMounted(async () => {
         </div>
       </section>
 
-      <section id="skills-projects" class="full-section bg-gray">
-        <div class="container">
-          <div class="content-grid">
-            <div class="chart-area sticky-chart">
-               <RadarChart :isDark="isDark" />
-            </div>
+      <section id="projects" class="full-section bg-gray">
+        <div class="projects-area">
+          
+          <h2 class="section-title" style="justify-content: center; margin-bottom: 40px;">
+            <i class="fa-solid fa-code-branch"></i> 專案作品 (Projects)
+          </h2>
+          
+          <div v-if="projects.length > 0" class="projects-carousel-container" @mouseenter="pauseAutoplay" @mouseleave="startAutoplay">
+            
+            <button v-if="projects.length > itemsPerView" class="nav-btn prev-btn" @click="prevSlide">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
 
-            <div class="projects-area">
-              <h2 class="section-title">
-                <i class="fa-solid fa-code-branch"></i> 專案作品 (Projects)
-              </h2>
-              
-              <div v-if="projects.length > 0" class="projects-list">
-                <div v-for="p in projects" :key="p.id" class="project-card">
+            <div class="carousel-viewport">
+              <div class="carousel-track" :style="trackStyle">
+                <div v-for="p in projects" :key="p.id" class="project-card" :style="cardStyle">
                   <div class="card-header">
                     <h3>{{ p.title }}</h3>
                     <div class="folder-icon"><i class="fa-regular fa-folder-open"></i></div>
                   </div>
                   <p class="desc">{{ p.description }}</p>
                   <div class="tags">
-                    <span class="tech-tag" v-for="tech in p.tech_stack.split(',')" :key="tech">
+                    <span class="tech-tag" v-for="tech in (p.tech_stack ? p.tech_stack.split(',') : [])" :key="tech">
                       {{ tech.trim() }}
                     </span>
                   </div>
                 </div>
               </div>
-              <p v-else class="loading-text">
-                 <i class="fa-solid fa-spinner fa-spin"></i> Loading...
-              </p>
             </div>
+
+            <button v-if="projects.length > itemsPerView" class="nav-btn next-btn" @click="nextSlide">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+
+            <div v-if="projects.length > itemsPerView" class="carousel-dots">
+              <span 
+                v-for="i in (projects.length - itemsPerView + 1)" 
+                :key="i" 
+                class="dot" 
+                :class="{ active: currentIndex === i - 1 }"
+                @click="goToSlide(i - 1)"
+              ></span>
+            </div>
+            
           </div>
+          
+          <p v-else class="loading-text" style="text-align: center;">
+             <i class="fa-solid fa-spinner fa-spin"></i> Loading...
+          </p>
+          
         </div>
       </section>
 
@@ -111,74 +223,4 @@ onMounted(async () => {
   </div>
 </template>
 
-<style scoped>
-.page-wrapper { width: 100%; position: relative; background-color: #0d1117; }
-.scene-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: 10; transition: opacity 0.5s ease; }
-.scene-wrapper.background-mode { pointer-events: none; }
-
-.main-content {
-  position: relative; 
-  z-index: 20; 
-  
-  /* === 🚀 關鍵修改在這裡：增加高度 === */
-  /* 從 100vh 改為 300vh (或更高) */
-  /* 這代表使用者要滾動 3 個螢幕的高度，內容才會上來 */
-  margin-top: 300vh; 
-  
-  min-height: 100vh;
-  
-  /* 預設隱藏 */
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity 1.5s ease-in-out, visibility 0s 0s;
-
-  /* 預設深色背景 */
-  background-color: #0d1117; 
-  color: #e0e0e0;
-}
-
-/* 內容顯示狀態 */
-.main-content.visible {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-  transition: opacity 1.5s ease-in-out;
-}
-
-/* === 交錯背景設定 === */
-.full-section { width: 100%; padding: 80px 0; }
-
-/* 預設深色模式顏色 */
-.bg-gray { background-color: #1a1a1a; color: #e0e0e0; }
-.bg-dark { background-color: #0d1117; color: #e0e0e0; }
-
-/* 淺色模式覆蓋 */
-.main-content.light-mode .bg-gray { background-color: #f8f9fa; color: #333; }
-.main-content.light-mode .bg-dark { background-color: #ffffff; color: #333; }
-
-/* === Layout & Components === */
-.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
-.content-grid { display: grid; grid-template-columns: 1fr; gap: 40px; }
-@media (min-width: 900px) { .content-grid { grid-template-columns: 400px 1fr; align-items: start; } .sticky-chart { position: sticky; top: 20px; } }
-
-.section-title { font-size: 2rem; margin-bottom: 30px; display: flex; align-items: center; gap: 10px; color: inherit; }
-.projects-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-
-/* 卡片預設深色 */
-.project-card { background: #1e1e1e; border-radius: 12px; padding: 20px; border: 1px solid #444; color: #e0e0e0; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.3s, box-shadow 0.3s; }
-.main-content.light-mode .project-card { background: #fff; border-color: #eee; color: #333; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-
-.project-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,123,255,0.15); border-color: #007bff; }
-.card-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
-.card-header h3 { margin: 0; font-size: 1.2rem; color: #4dabf7; }
-.main-content.light-mode .card-header h3 { color: #007bff; }
-.folder-icon { color: #ffd700; font-size: 1.2rem; }
-.desc { color: #aaa; margin-bottom: 15px; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.main-content.light-mode .desc { color: #666; }
-.tags { display: flex; flex-wrap: wrap; gap: 8px; }
-.tech-tag { background: #333; color: #ccc; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; }
-.main-content.light-mode .tech-tag { background: #eef2f7; color: #555; }
-.footer { text-align: center; padding: 40px; background: #000; color: #fff; margin-top: 0; border-top: 1px solid #333; }
-.main-content.light-mode .footer { background: #f1f1f1; color: #333; border-top: 1px solid #ddd; }
-</style>
+<style scoped src="@/assets/css/home.css"></style>
