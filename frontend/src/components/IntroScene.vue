@@ -42,6 +42,7 @@ let pcCaseObject: THREE.Object3D | null = null;
 let monitorMesh: THREE.Mesh | null = null; 
 let startHintSprite: THREE.Sprite | null = null; 
 let isHoveringPc = false;
+const isRendering = ref(true);
 
 // 程式語言圖示
 const languages = [
@@ -230,8 +231,9 @@ const initScene = async () => {
   camera.position.set(0, 1.5, BASE_CAMERA_Z); 
   
   renderer = new THREE.WebGLRenderer({ canvas: canvasRef.value, alpha: true, antialias: true });
-  renderer.setPixelRatio(window.devicePixelRatio); 
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
   renderer.setSize(window.innerWidth, window.innerHeight);
+  containerRef.value.appendChild(renderer.domElement);
   renderer.autoClear = false; 
   renderer.shadowMap.enabled = true;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -387,9 +389,11 @@ const setupScrollAnimation = () => {
       onLeave: () => {
           emit('enter-site');
           if (canvasRef.value) canvasRef.value.style.pointerEvents = 'none';
+          isRendering.value = false;
       },
       onEnterBack: () => {
           if (canvasRef.value) canvasRef.value.style.pointerEvents = 'auto';
+          isRendering.value = true;
       }
     }
   });
@@ -412,7 +416,7 @@ const setupScrollAnimation = () => {
 };
 
 const onMouseMove = (event: MouseEvent) => {
-    if (!canvasRef.value) return;
+    if (!isRendering.value || !canvasRef.value) return;
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
@@ -459,6 +463,7 @@ const onClick = () => {
 
 const animate = () => {
   animationId = requestAnimationFrame(animate);
+  if (!isRendering.value) return;
   if (controls) controls.update();
   
   floatingElements.forEach(el => {
