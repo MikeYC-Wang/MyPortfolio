@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 
-// === 高解析度設定 (2K) ===
-const width = 2048;
-const height = 1024;
+// === 高解析度設定 (FHD) ===
+const width = 1920;
+const height = 1080;
 const padding = { x: 60, y: 120 };
 const lineHeight = 60;
 const fontSize = 'bold 42px "Menlo", "Monaco", "Courier New", monospace';
@@ -65,7 +65,10 @@ let isPythonIconLoaded = false;
 
 pythonIcon.onload = () => {
   isPythonIconLoaded = true;
-  if (isPoweredOn) draw();
+  if (isPoweredOn) {
+    cacheBackground();
+    isDirty = true;
+  }
 };
 
 // 動畫狀態
@@ -75,7 +78,18 @@ let displayedLines: string[] = [];
 let cursorVisible = true;
 let typingTimer: any = null;
 let blinkTimer: any = null;
-let isPoweredOn = false; // 新增：是否已開機
+let isPoweredOn = false;
+let bgCanvas: HTMLCanvasElement | null = null;
+let isDirty = false;
+let rafId: number;
+
+const cacheBackground = () => {
+  bgCanvas = document.createElement('canvas');
+  bgCanvas.width = width;
+  bgCanvas.height = height;
+  const ctx = bgCanvas.getContext('2d');
+  if (ctx) drawInterface(ctx);
+};
 
 // === 繪製介面 (保留原本的 drawInterface 函式) ===
 const drawInterface = (ctx: CanvasRenderingContext2D) => {
@@ -249,17 +263,27 @@ const drawCode = (ctx: CanvasRenderingContext2D) => {
 };
 
 const draw = () => {
-  const canvas = canvasRef.value;
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+  isDirty = true;
+};
 
-  if (isPoweredOn) {
-    drawInterface(ctx);
-    drawCode(ctx);
-  } else {
-    // 關機狀態維持全黑，或者由 Boot 動畫控制
+const renderLoop = () => {
+  if (isDirty && isPoweredOn) {
+    const canvas = canvasRef.value;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        if (bgCanvas) {
+          ctx.drawImage(bgCanvas, 0, 0); 
+        } else {
+          drawInterface(ctx);
+        }
+
+        drawCode(ctx);
+      }
+    }
+    isDirty = false; // 畫完就清除標記
   }
+  rafId = requestAnimationFrame(renderLoop);
 };
 
 // 打字機邏輯 (保留不變)
@@ -368,13 +392,9 @@ const turnOn = async () => {
 
             if (progress >= 100) {
                 clearInterval(interval);
-                // 2. 開機完成，切換狀態
                 isPoweredOn = true;
-                // 清除畫面
-                ctx.fillStyle = colors.bg;
-                ctx.fillRect(0, 0, width, height);
-                // 開始 VS Code 動畫
-                draw();
+                cacheBackground(); 
+                isDirty = true; 
                 typeStep();
                 resolve();
             }
@@ -387,18 +407,19 @@ onMounted(() => {
   if (canvas) {
     const ctx = canvas.getContext('2d');
     if (ctx) {
-        // 初始狀態：全黑
-        ctx.fillStyle = '#0a0a0a'; // 非常深的灰色，幾乎全黑，有點質感
+        ctx.fillStyle = '#0a0a0a'; 
         ctx.fillRect(0, 0, width, height);
     }
   }
   
   blinkCursor();
+  rafId = requestAnimationFrame(renderLoop);
 });
 
 onUnmounted(() => {
   clearTimeout(typingTimer);
   clearTimeout(blinkTimer);
+  cancelAnimationFrame(rafId);
 });
 
 // 公開方法給父元件
