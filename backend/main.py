@@ -450,18 +450,27 @@ def get_github_contributions():
         soup = BeautifulSoup(res.text, 'html.parser')
         
         data = []
-
         days = soup.find_all('td', class_='ContributionCalendar-day')
         
         for day in days:
             date = day.get('data-date')
-            level = day.get('data-level')
-            
-            if not date or not level:
+            if not date:
                 continue
+            
+            day_id = day.get('id')
+            count = 0
 
-            level_map = {'0': 0, '1': 1, '2': 3, '3': 6, '4': 10}
-            count = level_map.get(level, 0)
+            if day_id:
+                tooltip = soup.find('tool-tip', {'for': day_id})
+                if tooltip:
+                    text = tooltip.text.strip()
+                    if "No" in text or not text:
+                        count = 0
+                    else:
+                        try:
+                            count = int(text.split(' ')[0].replace(',', ''))
+                        except ValueError:
+                            count = 0
             
             data.append([date, count])
             

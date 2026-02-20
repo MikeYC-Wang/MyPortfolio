@@ -127,7 +127,7 @@ onMounted(async () => {
         }
       },
       calendar: [{
-        top: 30, bottom: 60, left: 30, right: 30,
+        top: 30, bottom: 60, left: 45, right: 30,
         range: [
           echarts.time.format(start, '{yyyy}-{MM}-{dd}', false),
           echarts.time.format(end, '{yyyy}-{MM}-{dd}', false)
@@ -190,7 +190,10 @@ const handleResize = () => {
           <h2><i class="fa-brands fa-github"></i> 開發活躍度 (Contribution Heatmap)</h2>
           <span class="subtitle">近一年的程式碼提交紀錄</span>
         </div>
-        <div ref="heatmapContainer" class="heatmap-box"></div>
+        
+        <div class="heatmap-scroll-wrapper">
+          <div ref="heatmapContainer" class="heatmap-box"></div>
+        </div>
       </div>
 
     </div>
@@ -296,7 +299,7 @@ const handleResize = () => {
   100% { top: 105%; }
 }
 
-/* --- ✨ 熱力圖專屬樣式 --- */
+/* --- 熱力圖專屬樣式 --- */
 .heatmap-card {
   padding: 30px;
 }
@@ -320,8 +323,61 @@ const handleResize = () => {
   color: #888;
 }
 
+.heatmap-scroll-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 10px; /* 給底部捲軸留一點空間 */
+  
+  /* Firefox 捲軸美化 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--link-active) transparent;
+}
+
+.heatmap-scroll-wrapper::-webkit-scrollbar {
+  height: 6px;
+}
+.heatmap-scroll-wrapper::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+.heatmap-scroll-wrapper::-webkit-scrollbar-thumb {
+  background: var(--link-active);
+  border-radius: 4px;
+}
+
 .heatmap-box {
   width: 100%;
-  height: 250px; /* 熱力圖不需要太高 */
+  min-width: 800px; 
+  height: 250px; 
+}
+
+@media (max-width: 768px) {
+  .heatmap-card {
+    padding: 20px 15px;
+  }
+
+  .card-header {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .card-header::-webkit-scrollbar {
+    display: none;
+  }
+
+  .card-header h2 {
+    font-size: 1.05rem;
+    white-space: nowrap;
+  }
+
+  .card-header .subtitle {
+    font-size: 0.8rem;
+    white-space: nowrap;
+    display: block;
+  }
+
+  .monitor-card {
+    padding: 15px;
+  }
 }
 </style>
