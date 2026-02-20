@@ -26,6 +26,7 @@
     "apexcharts": "^5.3.6",
     "axios": "^1.13.2",
     "codemirror": "^6.0.2",
+    "echarts": "^6.0.0",
     "highlight.js": "^11.11.1",
     "markdown-it": "^14.1.1",
     "pinia": "^3.0.3",

@@ -3,6 +3,7 @@ import shutil
 import uuid
 import datetime
 import secrets
+import psutil
 from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException, File, UploadFile, Request, status
 from fastapi.staticfiles import StaticFiles
@@ -413,3 +414,11 @@ def delete_project(project_id: int, db: Session = Depends(get_db)):
     db.commit()
     
     return {"message": "Project deleted successfully"}
+
+# 系統數據監控
+@app.get("/api/system_status")
+def get_system_status():
+    return {
+        "cpu": psutil.cpu_percent(interval=1),
+        "ram": psutil.virtual_memory().percent
+    }
