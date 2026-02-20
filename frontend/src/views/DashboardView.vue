@@ -7,47 +7,42 @@ const chartContainer = ref<HTMLElement | null>(null);
 let myChart: echarts.ECharts | null = null;
 let pollingTimer: number | null = null;
 
-// 用來存放圖表資料的陣列
-const MAX_POINTS = 30; // 畫面上最多保留 30 個點
+const MAX_POINTS = 30; 
 const timeData = ref<string[]>([]);
 const cpuData = ref<number[]>([]);
 const ramData = ref<number[]>([]);
+const gpuData = ref<number[]>([]); // ✨ 新增 GPU 陣列
 
-// 呼叫後端 API 取得真實系統數據
 const fetchSystemStatus = async () => {
   try {
     const res = await axios.get('/api/system_status');
-    const { cpu, ram } = res.data;
+    const { cpu, ram, gpu } = res.data; // ✨ 接收 GPU 數據
     
-    // 取得當下時間 (格式 HH:mm:ss)
     const now = new Date();
     const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
 
-    // 將新資料塞入陣列尾端
     timeData.value.push(timeStr);
     cpuData.value.push(cpu);
     ramData.value.push(ram);
+    gpuData.value.push(gpu); // ✨ 存入 GPU 陣列
 
-    // 如果超過最大點數限制，就把最舊的(第一筆)資料剔除，讓圖表有往前推進的效果
     if (timeData.value.length > MAX_POINTS) {
       timeData.value.shift();
       cpuData.value.shift();
       ramData.value.shift();
+      gpuData.value.shift(); // ✨ 同步剔除最舊的 GPU 數據
     }
 
-    // 將新數據動態更新到 ECharts 上
     if (myChart) {
       myChart.setOption({
-        xAxis: {
-          data: timeData.value
-        },
+        xAxis: { data: timeData.value },
         series: [
-          { data: cpuData.value }, // 對應第一個 series (CPU)
-          { data: ramData.value }  // 對應第二個 series (RAM)
+          { data: cpuData.value }, 
+          { data: ramData.value },  
+          { data: gpuData.value }  // ✨ 對應第三個 series (GPU)
         ]
       });
     }
-
   } catch (error) {
     console.error('無法取得系統數據:', error);
   }
@@ -58,7 +53,8 @@ onMounted(async () => {
     myChart = echarts.init(chartContainer.value); 
 
     const option = {
-      color: ['#00f2ff', '#bd00ff'],
+      // ✨ 加入第三種顏色：青色(CPU), 紫色(RAM), 駭客綠(GPU)
+      color: ['#00f2ff', '#bd00ff', '#00ff41'], 
       backgroundColor: 'transparent',
       title: {
         text: 'SERVER PERFORMANCE MONITOR',
@@ -78,7 +74,8 @@ onMounted(async () => {
         }
       },
       legend: {
-        data: ['CPU Usage (%)', 'RAM Usage (%)'],
+        // ✨ 圖例加入 GPU
+        data: ['CPU Usage (%)', 'RAM Usage (%)', 'GPU Usage (%)'], 
         textStyle: { color: '#888' },
         top: '60px',
         right: '30px'
@@ -90,7 +87,7 @@ onMounted(async () => {
       xAxis: {
         type: 'category',
         boundaryGap: false,
-        data: [], // 初始為空，後續由 fetchSystemStatus 更新
+        data: [], 
         axisLine: { lineStyle: { color: '#00f2ff' } },
         axisLabel: { color: '#888', fontFamily: 'monospace' },
         axisTick: { show: false },
@@ -102,81 +99,72 @@ onMounted(async () => {
       yAxis: [
         {
           type: 'value',
-          name: 'CPU (%)',
+          name: 'Usage (%)', // ✨ 將 Y 軸名稱統整為 Usage
           min: 0, max: 100,
           axisLine: { lineStyle: { color: '#888' } },
           axisLabel: { color: '#888', formatter: '{value} %' },
           splitLine: { lineStyle: { color: 'rgba(136, 136, 136, 0.2)', type: 'dashed' } },
           nameTextStyle: { color: '#888' }
-        },
-        {
-          type: 'value',
-          name: 'RAM (%)',
-          min: 0, max: 100,
-          axisLine: { lineStyle: { color: '#888' } },
-          axisLabel: { color: '#888', formatter: '{value} %' },
-          splitLine: { show: false },
-          nameTextStyle: { color: '#888' }
         }
       ],
       series: [
+        // CPU
         {
           name: 'CPU Usage (%)',
           type: 'line',
           smooth: true,
           symbol: 'none',
-          yAxisIndex: 0,
-          lineStyle: {
-            width: 3,
-            color: '#00f2ff',
-            shadowColor: 'rgba(0, 242, 255, 0.5)',
-            shadowBlur: 10,
-            shadowOffsetY: 5
-          },
+          lineStyle: { width: 3, shadowColor: 'rgba(0, 242, 255, 0.5)', shadowBlur: 10, shadowOffsetY: 5 },
           areaStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
               { offset: 0, color: 'rgba(0, 242, 255, 0.5)' },
               { offset: 1, color: 'rgba(0, 242, 255, 0.05)' }
             ])
           },
-          data: [] // 初始為空
+          data: [] 
         },
+        // RAM
         {
-          name: 'RAM Usage (%)',
+          name: 'RAM Usage (%)', 
           type: 'line',
           smooth: true,
           symbol: 'none',
-          yAxisIndex: 1,
-          lineStyle: {
-            width: 3,
-            color: '#bd00ff',
-            shadowColor: 'rgba(189, 0, 255, 0.5)',
-            shadowBlur: 10,
-            shadowOffsetY: 5
-          },
+          lineStyle: { width: 3, shadowColor: 'rgba(189, 0, 255, 0.5)', shadowBlur: 10, shadowOffsetY: 5 },
           areaStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
               { offset: 0, color: 'rgba(189, 0, 255, 0.5)' },
               { offset: 1, color: 'rgba(189, 0, 255, 0.05)' }
             ])
           },
-          data: [] // 初始為空
+          data: [] 
+        },
+        // ✨ GPU (駭客綠)
+        {
+          name: 'GPU Usage (%)', 
+          type: 'line',
+          smooth: true,
+          symbol: 'none',
+          lineStyle: { width: 3, shadowColor: 'rgba(0, 255, 65, 0.5)', shadowBlur: 10, shadowOffsetY: 5 },
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(0, 255, 65, 0.5)' },
+              { offset: 1, color: 'rgba(0, 255, 65, 0.05)' }
+            ])
+          },
+          data: [] 
         }
       ]
     };
 
     myChart.setOption(option);
-    
-    // RWD 自動重整大小
     window.addEventListener('resize', handleResize);
 
-    await fetchSystemStatus(); // 載入畫面時先抓取第一筆
-    pollingTimer = window.setInterval(fetchSystemStatus, 10000); // 每 10 秒抓取一次最新資料
+    await fetchSystemStatus(); 
+    pollingTimer = window.setInterval(fetchSystemStatus, 10000); 
   }
 });
 
 onUnmounted(() => {
-  // 清理記憶體：移除監聽與計時器
   window.removeEventListener('resize', handleResize);
   if (pollingTimer) window.clearInterval(pollingTimer);
   if (myChart) myChart.dispose();
@@ -193,7 +181,7 @@ const handleResize = () => {
       
       <div class="header-actions">
         <h1 class="page-title">
-          <i class="fa-solid fa-gauge"></i> 系統監控儀表板 </h1>
+          <i class="fa-solid fa-gauge"></i> 系統監控控制台 </h1>
         
         <RouterLink to="/" class="back-btn">
           <i class="fa-solid fa-arrow-left"></i> 返回首頁

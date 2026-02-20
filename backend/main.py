@@ -4,6 +4,7 @@ import uuid
 import datetime
 import secrets
 import psutil
+import GPUtil
 from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException, File, UploadFile, Request, status
 from fastapi.staticfiles import StaticFiles
@@ -418,7 +419,17 @@ def delete_project(project_id: int, db: Session = Depends(get_db)):
 # 系統數據監控
 @app.get("/api/system_status")
 def get_system_status():
+    gpu_usage = 0.0
+    
+    try:
+        gpus = GPUtil.getGPUs()
+        if gpus:
+            gpu_usage = round(gpus[0].load * 100, 1)
+    except Exception as e:
+        print(f"無法讀取 GPU 數據: {e}")
+
     return {
         "cpu": psutil.cpu_percent(interval=1),
-        "ram": psutil.virtual_memory().percent
+        "ram": psutil.virtual_memory().percent,
+        "gpu": gpu_usage
     }
