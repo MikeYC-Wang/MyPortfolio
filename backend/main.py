@@ -97,6 +97,14 @@ class LoginLogModel(Base):
     is_success = Column(Boolean)
     attempt_time = Column(TIMESTAMP, server_default=func.now())
 
+class ApiLogModel(Base):
+    __tablename__ = "api_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    path = Column(String, index=True)      # 請求的路徑 (例如 /api/projects)
+    method = Column(String)                # 請求的方法 (GET, POST 等)
+    client_ip = Column(String)             # 客戶端 IP
+    timestamp = Column(TIMESTAMP, server_default=func.now()) # 發生時間
+
 # ==========================================
 # 3. 傳輸模型 (Pydantic Schemas)
 # ==========================================
@@ -485,19 +493,57 @@ def get_github_contributions():
         return []
 
 # ==========================================
-# 系統圖表：API 每日呼叫次數統計 (近 7 天)
+# 系統圖表：API 每日呼叫次數統計
 # ==========================================
 @app.get("/api/stats/api-calls")
-def get_api_calls_stats():
-    today = datetime.date.today()
-    data = []
+def get_api_calls_stats(db: Session = Depends(get_db)):
+    today = datetime.datetime.now().date()
+    seven_days_ago = today - datetime.timedelta(days=6)
     
+    # 1. 預先建立過去 7 天的空字典
+    stats = {}
     for i in range(6, -1, -1):
-        date_str = (today - datetime.timedelta(days=i)).strftime("%m-%d")
-        base_calls = random.randint(500, 1500)
-        if i == 2:
-            base_calls += random.randint(2000, 4000)
-            
-        data.append({"date": date_str, "count": base_calls})
-        
+        target_date = (today - datetime.timedelta(days=i)).strftime("%m-%d")
+        stats[target_date] = 0
+
+    # 2. 從資料庫撈出過去 7 天的連線紀錄
+    logs = db.query(ApiLogModel).filter(
+        func.date(ApiLogModel.timestamp) >= seven_days_ago
+    ).all()
+
+    # 3. 將資料按日期分組累加
+    for log in logs:
+        if log.timestamp:
+            log_date = log.timestamp.strftime("%m-%d")
+            if log_date in stats:
+                stats[log_date] += 1
+
+    # 4. 轉換為前端 ECharts 需要的陣列格式
+    data = [{"date": k, "count": v} for k, v in stats.items()]
     return data
+
+# ==========================================
+# 流量監控攔截器 (Middleware)
+# ==========================================
+@app.middleware("http")
+async def log_api_requests(request: Request, call_next):
+    # 先讓請求繼續往下走，拿到回應
+    response = await call_next(request)
+    
+    # 我們只紀錄 /api/ 開頭的真實資料請求，排除靜態檔案或圖片下載，以免塞爆資料庫
+    if request.url.path.startswith("/api/"):
+        db = SessionLocal()
+        try:
+            log = ApiLogModel(
+                path=request.url.path,
+                method=request.method,
+                client_ip=request.client.host
+            )
+            db.add(log)
+            db.commit()
+        except Exception as e:
+            print(f"寫入 API 流量日誌失敗: {e}")
+        finally:
+            db.close()
+            
+    return response

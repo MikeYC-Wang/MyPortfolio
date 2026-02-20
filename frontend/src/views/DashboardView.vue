@@ -49,7 +49,7 @@ const fetchSystemStatus = async () => {
   }
 };
 
-// === ✨ 圖表 2: API 流量監控 (新加入) ===
+// === 圖表 2: API 流量監控 ===
 const apiChartContainer = ref<HTMLElement | null>(null);
 let apiChart: echarts.ECharts | null = null;
 
@@ -114,7 +114,7 @@ onMounted(async () => {
     pollingTimer = window.setInterval(fetchSystemStatus, 1000); 
   }
 
-  // --- ✨ 初始化圖表 2 (API 流量監控) ---
+  // --- 初始化圖表 2 (API 流量監控) ---
   if (apiChartContainer.value) {
     apiChart = echarts.init(apiChartContainer.value);
     const apiOption = {
@@ -214,13 +214,13 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
   if (pollingTimer) window.clearInterval(pollingTimer);
   if (myChart) myChart.dispose();
-  if (apiChart) apiChart.dispose(); // ✨ 清除新圖表
+  if (apiChart) apiChart.dispose();
   if (heatmapChart) heatmapChart.dispose();
 });
 
 const handleResize = () => {
   if (myChart) myChart.resize();
-  if (apiChart) apiChart.resize(); // ✨ 調整新圖表大小
+  if (apiChart) apiChart.resize();
   if (heatmapChart) heatmapChart.resize();
 };
 </script>
@@ -344,7 +344,7 @@ const handleResize = () => {
   min-height: 400px;
 }
 
-/* ✨ 讓 API 圖表稍微矮一點，版面比較平衡 */
+/* API 圖表 */
 .api-echarts-box {
   height: 40vh;
   min-height: 350px;

@@ -43,6 +43,7 @@
   text-transform: uppercase;
   margin-top: 5px;
   display: block;
+  text-align:left;
 }
 
 /* 新增按鈕 (CodePen 風格) */

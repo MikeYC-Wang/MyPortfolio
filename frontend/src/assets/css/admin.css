@@ -110,11 +110,14 @@
 
 /* --- 右側編輯區 --- */
 .editor-container {
-  flex-grow: 1;
+  flex: 1;
   display: flex;
   flex-direction: column;
   padding: 20px;
   min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  background-color: var(--nav-bg);
 }
 
 .header-actions {
@@ -226,8 +229,10 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
-  flex-grow: 1;
-  min-height: 0;
+  flex-shrink: 0;
+  height: 65vh;
+  min-height: 500px;
+  margin-bottom: 50px;
 }
 
 .editor-pane, .preview-pane {
@@ -237,6 +242,7 @@
   border: 1px solid var(--border-color);
   border-radius: 12px;
   overflow: hidden;
+  height: 100%;
 }
 
 .pane-header {
@@ -286,6 +292,8 @@
   line-height: 1.6;
   resize: none;
   outline: none;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .content-preview {
@@ -294,6 +302,7 @@
   overflow-y: auto;
   color: var(--text-color);
   background: var(--card-bg);
+  min-height: 0;
 }
 
 .admin-tabs {
@@ -326,8 +335,9 @@
 .project-editor-wrapper {
   padding: 10px;
   display: grid;
-  grid-template-columns: 1fr 450px; /* 左側編輯，右側預覽 */
+  grid-template-columns: 1fr 450px; 
   gap: 30px;
+  align-items: start;
 }
 
 .project-form-card {
@@ -463,7 +473,15 @@
 
 /* RWD */
 @media (max-width: 768px) {
-  .editor-area { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+    .editor-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 20px;
+    margin-bottom: 50px;
+    height: 60vh;
+    min-height: 500px; 
+    }
   .sidebar { position: absolute; height: 100%; z-index: 50; }
   .sidebar.closed { transform: translateX(-100%); width: 280px; }
 }

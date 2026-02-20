@@ -336,8 +336,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <div v-if="adminMode === 'posts'" class="editor-body-wrapper" style="display: flex; flex-direction: column; width: 100%;">
-        
+      <div v-if="adminMode === 'posts'" class="editor-body-wrapper">
         <div class="form-grid">
           <div class="input-group">
             <input v-model="postForm.title" type="text" placeholder="請輸入文章標題..." class="title-input" />
@@ -353,7 +352,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="editor-area" style="width: 100%;">
+        <div class="editor-area">
           <div class="editor-pane">
             <div class="pane-header">
               <span class="pane-label">Markdown 編輯區</span>
@@ -375,8 +374,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <div v-else class="project-editor-wrapper" style="display: flex; flex-direction: column; width: 100%;">
-        
+      <div v-else class="project-editor-wrapper">
         <div class="project-top-section" style="display: flex; gap: 30px; flex-wrap: wrap; width: 100%;">
           <div class="project-form-card" style="flex: 1; min-width: 300px;">
             <div class="input-group">
@@ -412,7 +410,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="editor-area" style="margin-top: 30px; width: 100%;">
+        <div class="editor-area" style="width: 100%;">
           <div class="editor-pane">
             <div class="pane-header">
               <span class="pane-label">完整內文 (Markdown 語法)</span>
@@ -429,7 +427,7 @@ onMounted(() => {
               ref="textareaRef" 
               v-model="projectForm.content" 
               class="markdown-input" 
-              placeholder="請在這裡撰寫詳細的專案說明，您可以插入圖片、架構圖或程式碼區塊..."
+              placeholder="請在這裡撰寫詳細的專案說明..."
             ></textarea>
           </div>
           <div class="preview-pane">
@@ -437,7 +435,6 @@ onMounted(() => {
             <div class="markdown-body content-preview" v-html="renderedProjectContent"></div>
           </div>
         </div>
-
       </div>
     </main>
   </div>
