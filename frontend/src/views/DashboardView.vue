@@ -53,7 +53,7 @@ onMounted(async () => {
     myChart = echarts.init(chartContainer.value); 
 
     const option = {
-      // ✨ 加入第三種顏色：青色(CPU), 紫色(RAM), 駭客綠(GPU)
+      // 青色(CPU), 紫色(RAM), 駭客綠(GPU)
       color: ['#00f2ff', '#bd00ff', '#00ff41'], 
       backgroundColor: 'transparent',
       title: {
@@ -74,7 +74,6 @@ onMounted(async () => {
         }
       },
       legend: {
-        // ✨ 圖例加入 GPU
         data: ['CPU Usage (%)', 'RAM Usage (%)', 'GPU Usage (%)'], 
         textStyle: { color: '#888' },
         top: '60px',
@@ -99,7 +98,7 @@ onMounted(async () => {
       yAxis: [
         {
           type: 'value',
-          name: 'Usage (%)', // ✨ 將 Y 軸名稱統整為 Usage
+          name: 'Usage (%)',
           min: 0, max: 100,
           axisLine: { lineStyle: { color: '#888' } },
           axisLabel: { color: '#888', formatter: '{value} %' },
@@ -138,7 +137,7 @@ onMounted(async () => {
           },
           data: [] 
         },
-        // ✨ GPU (駭客綠)
+        // GPU
         {
           name: 'GPU Usage (%)', 
           type: 'line',
