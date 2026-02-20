@@ -1,33 +1,65 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import * as echarts from 'echarts';
+import axios from 'axios';
 
 const chartContainer = ref<HTMLElement | null>(null);
 let myChart: echarts.ECharts | null = null;
+let pollingTimer: number | null = null;
 
-// 假資料生成函數
-const generateData = (count: number) => {
-  let baseTime = new Date().getTime();
-  const data = [];
-  for (let i = 0; i < count; i++) {
-    const now = new Date(baseTime += 60 * 1000);
-    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-    const cpuValue = (Math.sin(i / 5) * 20 + 50 + Math.random() * 10).toFixed(1);
-    const trafficValue = (Math.cos(i / 5) * 300 + 600 + Math.random() * 100).toFixed(0);
-    data.push({ time: timeStr, cpu: cpuValue, traffic: trafficValue });
+// 用來存放圖表資料的陣列
+const MAX_POINTS = 30; // 畫面上最多保留 30 個點
+const timeData = ref<string[]>([]);
+const cpuData = ref<number[]>([]);
+const ramData = ref<number[]>([]);
+
+// 呼叫後端 API 取得真實系統數據
+const fetchSystemStatus = async () => {
+  try {
+    const res = await axios.get('/api/system_status');
+    const { cpu, ram } = res.data;
+    
+    // 取得當下時間 (格式 HH:mm:ss)
+    const now = new Date();
+    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+
+    // 將新資料塞入陣列尾端
+    timeData.value.push(timeStr);
+    cpuData.value.push(cpu);
+    ramData.value.push(ram);
+
+    // 如果超過最大點數限制，就把最舊的(第一筆)資料剔除，讓圖表有往前推進的效果
+    if (timeData.value.length > MAX_POINTS) {
+      timeData.value.shift();
+      cpuData.value.shift();
+      ramData.value.shift();
+    }
+
+    // 將新數據動態更新到 ECharts 上
+    if (myChart) {
+      myChart.setOption({
+        xAxis: {
+          data: timeData.value
+        },
+        series: [
+          { data: cpuData.value }, // 對應第一個 series (CPU)
+          { data: ramData.value }  // 對應第二個 series (RAM)
+        ]
+      });
+    }
+
+  } catch (error) {
+    console.error('無法取得系統數據:', error);
   }
-  return data;
 };
 
-const mockData = generateData(30);
-
-onMounted(() => {
+onMounted(async () => {
   if (chartContainer.value) {
-    // 雖然外層會跟隨 Theme.css，但 ECharts 內部文字我們預設給一個能適配深淺色的配置
     myChart = echarts.init(chartContainer.value); 
 
     const option = {
-      backgroundColor: 'transparent', // 讓背景透明，完全吃 Theme.css 的卡片背景
+      color: ['#00f2ff', '#bd00ff'],
+      backgroundColor: 'transparent',
       title: {
         text: 'SERVER PERFORMANCE MONITOR',
         textStyle: { color: '#00f2ff', fontSize: 16, fontWeight: 'bold', fontFamily: 'monospace' },
@@ -46,8 +78,8 @@ onMounted(() => {
         }
       },
       legend: {
-        data: ['CPU Usage (%)', 'Network Traffic (Mbps)'],
-        textStyle: { color: '#888' }, // 改用灰色，深淺模式都看得清楚
+        data: ['CPU Usage (%)', 'RAM Usage (%)'],
+        textStyle: { color: '#888' },
         top: '60px',
         right: '30px'
       },
@@ -58,7 +90,7 @@ onMounted(() => {
       xAxis: {
         type: 'category',
         boundaryGap: false,
-        data: mockData.map(item => item.time),
+        data: [], // 初始為空，後續由 fetchSystemStatus 更新
         axisLine: { lineStyle: { color: '#00f2ff' } },
         axisLabel: { color: '#888', fontFamily: 'monospace' },
         axisTick: { show: false },
@@ -74,16 +106,15 @@ onMounted(() => {
           min: 0, max: 100,
           axisLine: { lineStyle: { color: '#888' } },
           axisLabel: { color: '#888', formatter: '{value} %' },
-          splitLine: { 
-              lineStyle: { color: 'rgba(136, 136, 136, 0.2)', type: 'dashed' } 
-          },
+          splitLine: { lineStyle: { color: 'rgba(136, 136, 136, 0.2)', type: 'dashed' } },
           nameTextStyle: { color: '#888' }
         },
         {
           type: 'value',
-          name: 'Traffic (Mbps)',
+          name: 'RAM (%)',
+          min: 0, max: 100,
           axisLine: { lineStyle: { color: '#888' } },
-          axisLabel: { color: '#888', formatter: '{value} M' },
+          axisLabel: { color: '#888', formatter: '{value} %' },
           splitLine: { show: false },
           nameTextStyle: { color: '#888' }
         }
@@ -108,10 +139,10 @@ onMounted(() => {
               { offset: 1, color: 'rgba(0, 242, 255, 0.05)' }
             ])
           },
-          data: mockData.map(item => item.cpu)
+          data: [] // 初始為空
         },
         {
-          name: 'Network Traffic (Mbps)',
+          name: 'RAM Usage (%)',
           type: 'line',
           smooth: true,
           symbol: 'none',
@@ -129,18 +160,25 @@ onMounted(() => {
               { offset: 1, color: 'rgba(189, 0, 255, 0.05)' }
             ])
           },
-          data: mockData.map(item => item.traffic)
+          data: [] // 初始為空
         }
       ]
     };
 
     myChart.setOption(option);
+    
+    // RWD 自動重整大小
     window.addEventListener('resize', handleResize);
+
+    await fetchSystemStatus(); // 載入畫面時先抓取第一筆
+    pollingTimer = window.setInterval(fetchSystemStatus, 10000); // 每 10 秒抓取一次最新資料
   }
 });
 
 onUnmounted(() => {
+  // 清理記憶體：移除監聽與計時器
   window.removeEventListener('resize', handleResize);
+  if (pollingTimer) window.clearInterval(pollingTimer);
   if (myChart) myChart.dispose();
 });
 
@@ -155,8 +193,7 @@ const handleResize = () => {
       
       <div class="header-actions">
         <h1 class="page-title">
-          <i class="fa-solid fa-chart-line"></i> 系統監控儀表板
-        </h1>
+          <i class="fa-solid fa-gauge"></i> 系統監控儀表板 </h1>
         
         <RouterLink to="/" class="back-btn">
           <i class="fa-solid fa-arrow-left"></i> 返回首頁
@@ -176,7 +213,7 @@ const handleResize = () => {
 /* 頁面外層，維持滿版，文字顏色吃全域設定 */
 .dashboard-page {
   min-height: 100vh;
-  padding: 80px 20px 40px; /* 留出上方導覽列的空間 */
+  padding: 80px 20px 40px; 
   display: flex;
   justify-content: center;
 }
