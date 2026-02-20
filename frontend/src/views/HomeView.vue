@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import axios from 'axios';
+import { useRouter } from 'vue-router';
 import { useTheme } from '@/composables/useTheme';
 
 // === 引入所有元件 ===
@@ -19,8 +20,13 @@ interface Project {
 const projects = ref<Project[]>([]);
 const errorMsg = ref('');
 const isEntered = ref(false);
+const router = useRouter();
 
 const { isDark, initTheme } = useTheme();
+
+const goToProjects = () => {
+  router.push('/projects');
+};
 
 // === 進入網站後的處理 ===
 const handleEnterSite = async () => {
@@ -178,7 +184,14 @@ onUnmounted(() => {
 
             <div class="carousel-viewport">
               <div class="carousel-track" :style="trackStyle">
-                <div v-for="p in projects" :key="p.id" class="project-card" :style="cardStyle">
+                
+                <div 
+                  v-for="p in projects" 
+                  :key="p.id" 
+                  class="project-card" 
+                  :style="cardStyle"
+                  @click="goToProjects"
+                >
                   <div class="card-header">
                     <h3>{{ p.title }}</h3>
                     <div class="folder-icon"><i class="fa-regular fa-folder-open"></i></div>
@@ -190,6 +203,7 @@ onUnmounted(() => {
                     </span>
                   </div>
                 </div>
+
               </div>
             </div>
 
@@ -217,7 +231,7 @@ onUnmounted(() => {
       </section>
 
       <footer class="footer">
-        <p>©2025 Mike Wang.</p>
+        <p>©2026 MikeYC-Wang.</p>
       </footer>
     </div>
   </div>

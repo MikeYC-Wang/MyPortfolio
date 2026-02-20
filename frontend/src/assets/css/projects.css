@@ -49,7 +49,7 @@
 }
 
 /* =========================================
-   網格排版 (Grid) 終極防護
+   網格排版 (Grid) 
 ========================================= */
 .projects-grid {
   display: grid;
@@ -57,6 +57,7 @@
   gap: 30px;
   align-items: stretch;
 }
+
 .project-card {
   background-color: var(--card-bg);
   border: 1px solid var(--card-border);
@@ -66,6 +67,7 @@
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
+  cursor: pointer;
   width: 85%;
 }
 
@@ -84,19 +86,6 @@
 
 .folder-icon i {
   font-size: 2.5rem;
-  color: var(--link-active);
-}
-
-.icon-link {
-  font-size: 1.2rem;
-  color: var(--text-color);
-  opacity: 0.6;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.icon-link:hover {
-  opacity: 1;
   color: var(--link-active);
 }
 
@@ -143,7 +132,7 @@
 }
 
 /* =========================================
-   彈出視窗 (Modal) 全文閱讀樣式
+   彈出視窗 (Modal) 全域樣式
 ========================================= */
 .modal-overlay {
   position: fixed;
@@ -167,8 +156,8 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   border-radius: 16px;
   width: 100%;
-  max-width: 600px;
-  max-height: 85vh; /* 防止內容太長超出螢幕 */
+  max-width: 1000px;
+  max-height: 85vh; 
   display: flex;
   flex-direction: column;
   position: relative;
@@ -177,12 +166,12 @@
 
 .modal-close-btn {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 25px;
+  right: 25px;
   background: transparent;
   border: none;
   color: var(--text-color);
-  font-size: 1.5rem;
+  font-size: 1.8rem;    
   cursor: pointer;
   opacity: 0.6;
   transition: 0.3s;
@@ -196,15 +185,26 @@
 }
 
 .modal-header {
-  padding: 30px 30px 10px 30px;
+  padding: 30px 60px 20px 30px; 
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   gap: 15px;
   border-bottom: 1px solid var(--border-color);
 }
 
+.modal-header .folder-icon {
+  display: flex;
+  align-items: center;
+}
+
+.modal-header .folder-icon i {
+  font-size: 2.2rem;
+  color: var(--link-active);
+}
+
 .modal-title {
-  font-size: 1.8rem;
+  font-size: 2rem;
   color: var(--text-color);
   margin: 0;
   line-height: 1.3;
@@ -212,11 +212,10 @@
 
 .modal-body {
   padding: 20px 30px;
-  overflow-y: auto; /* 內文過長可捲動 */
+  overflow-y: auto; 
   flex-grow: 1;
 }
 
-/* 捲軸美化 */
 .modal-body::-webkit-scrollbar {
   width: 6px;
 }
@@ -228,15 +227,6 @@
   border-radius: 10px;
 }
 
-.modal-desc {
-  color: var(--text-color);
-  opacity: 0.9;
-  font-size: 1.05rem;
-  line-height: 1.8;
-  white-space: pre-wrap; /* 完美保留換行符號 */
-  margin: 0;
-}
-
 .modal-footer {
   padding: 20px 30px;
   border-top: 1px solid var(--border-color);
@@ -244,19 +234,97 @@
 }
 
 /* Vue 彈出視窗轉場動畫 */
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: opacity 0.3s ease;
+.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.3s ease; }
+.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
+.modal-fade-enter-active .modal-content, .modal-fade-leave-active .modal-content { transition: transform 0.3s ease; }
+.modal-fade-enter-from .modal-content, .modal-fade-leave-to .modal-content { transform: scale(0.95) translateY(20px); }
+
+/* =========================================
+   專案摘要方塊 (Description)
+========================================= */
+.project-summary-box {
+  background: rgba(255, 255, 255, 0.05);
+  border-left: 4px solid var(--link-active);
+  padding: 15px 20px;
+  margin-bottom: 25px;
+  border-radius: 0 8px 8px 0;
 }
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
+
+.project-summary-box p {
+  margin: 0;
+  color: var(--text-color);
+  opacity: 0.95;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  white-space: pre-wrap; 
 }
-.modal-fade-enter-active .modal-content,
-.modal-fade-leave-active .modal-content {
-  transition: transform 0.3s ease;
+
+/* =========================================
+   Markdown 完整內文樣式
+========================================= */
+.content-preview {
+  color: var(--text-color);
+  line-height: 1.8;
+  font-size: 1.05rem;
 }
-.modal-fade-enter-from .modal-content,
-.modal-fade-leave-to .modal-content {
-  transform: scale(0.95) translateY(20px);
+
+.content-preview h1, 
+.content-preview h2, 
+.content-preview h3 {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  color: var(--link-active);
+}
+
+.content-preview p {
+  margin-bottom: 1rem;
+  opacity: 0.85;
+}
+
+.content-preview pre {
+  background: #282c34;
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 15px 0;
+}
+
+.content-preview code {
+  font-family: 'Fira Code', monospace;
+}
+
+.content-preview img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 15px 0;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.content-preview blockquote {
+  border-left: 4px solid var(--link-active);
+  padding-left: 1rem;
+  color: var(--text-color);
+  opacity: 0.8;
+  margin: 15px 0;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 10px 15px;
+  border-radius: 4px;
+}
+
+.content-preview ul, 
+.content-preview ol {
+  padding-left: 20px;
+  margin-bottom: 1rem;
+}
+
+.content-preview a {
+  color: #58a6ff;
+  text-decoration: none;
+}
+
+.content-preview a:hover {
+  text-decoration: underline;
 }

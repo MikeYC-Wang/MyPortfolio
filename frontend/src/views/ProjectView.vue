@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
+// ✨ 引入 Markdown 解析器與高亮套件
+import MarkdownIt from 'markdown-it';
+import hljs from 'highlight.js';
+import 'highlight.js/styles/atom-one-dark.css';
 import '@/assets/css/projects.css';
 
 interface Project {
@@ -8,6 +12,7 @@ interface Project {
   title: string;
   description: string;
   tech_stack: string;
+  content?: string; // ✨ 新增 content 屬性
 }
 
 const projects = ref<Project[]>([]);
@@ -16,6 +21,29 @@ const errorMsg = ref('');
 
 // 控制彈出視窗的狀態
 const selectedProject = ref<Project | null>(null);
+
+// ✨ Markdown 解析器設定 (與後台完全相同)
+const escapeHtml = (unsafe: string): string => {
+  return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+};
+
+const md = new MarkdownIt({
+  html: true,
+  linkify: true,
+  typographer: true,
+  highlight: function (str: string, lang: string): string {
+    if (lang && hljs.getLanguage(lang)) {
+      try { return '<pre class="hljs"><code>' + hljs.highlight(str, { language: lang, ignoreIllegals: true }).value + '</code></pre>'; } catch (__) {}
+    }
+    return '<pre class="hljs"><code>' + escapeHtml(str) + '</code></pre>';
+  }
+});
+
+// ✨ 計算當前選中專案的 Markdown 內容
+const renderedProjectContent = computed(() => {
+  if (!selectedProject.value || !selectedProject.value.content) return '';
+  return md.render(selectedProject.value.content);
+});
 
 // 開啟全文彈窗
 const openModal = (project: Project) => {
@@ -30,7 +58,6 @@ const closeModal = () => {
 };
 
 onMounted(async () => {
-  // 捲動到最上方
   window.scrollTo(0, 0);
   
   try {
@@ -100,7 +127,11 @@ onMounted(async () => {
           </div>
           
           <div class="modal-body">
-            <p class="modal-desc">{{ selectedProject.description }}</p>
+            <div class="project-summary-box" v-if="selectedProject.description">
+              <p>{{ selectedProject.description }}</p>
+            </div>
+            
+            <div v-if="selectedProject.content" class="markdown-body content-preview" v-html="renderedProjectContent"></div>
           </div>
           
           <div class="modal-footer">
@@ -116,3 +147,73 @@ onMounted(async () => {
 
   </div>
 </template>
+
+<style scoped>
+/* ✨ 加入 Markdown 內文的專屬樣式，確保圖片不會撐破，且程式碼有高亮 */
+:deep(.content-preview) {
+  color: var(--text-color);
+  line-height: 1.8;
+  font-size: 1.05rem;
+}
+
+:deep(.content-preview h1), 
+:deep(.content-preview h2), 
+:deep(.content-preview h3) {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  color: var(--link-active);
+}
+
+:deep(.content-preview p) {
+  margin-bottom: 1rem;
+}
+
+:deep(.content-preview pre) {
+  background: #282c34;
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 15px 0;
+}
+
+:deep(.content-preview code) {
+  font-family: 'Fira Code', monospace;
+}
+
+/* 確保圖片自適應大小，不會撐破 Modal */
+:deep(.content-preview img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 15px 0;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+:deep(.content-preview blockquote) {
+  border-left: 4px solid var(--link-active);
+  padding-left: 1rem;
+  color: var(--text-color);
+  opacity: 0.8;
+  margin: 15px 0;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 10px 15px;
+  border-radius: 4px;
+}
+
+:deep(.content-preview ul), 
+:deep(.content-preview ol) {
+  padding-left: 20px;
+  margin-bottom: 1rem;
+}
+
+:deep(.content-preview a) {
+  color: #58a6ff;
+  text-decoration: none;
+}
+
+:deep(.content-preview a:hover) {
+  text-decoration: underline;
+}
+</style>
