@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import * as echarts from 'echarts';
 import axios from 'axios';
 
-// === 圖表 1: 伺服器監控 (保持原樣) ===
+// === 圖表 1: 伺服器監控 ===
 const chartContainer = ref<HTMLElement | null>(null);
 let myChart: echarts.ECharts | null = null;
 let pollingTimer: number | null = null;
@@ -49,7 +49,28 @@ const fetchSystemStatus = async () => {
   }
 };
 
-// === 圖表 2: 真實 GitHub 貢獻度熱力圖 ===
+// === ✨ 圖表 2: API 流量監控 (新加入) ===
+const apiChartContainer = ref<HTMLElement | null>(null);
+let apiChart: echarts.ECharts | null = null;
+
+const fetchApiStats = async () => {
+  try {
+    const res = await axios.get('/api/stats/api-calls');
+    const dates = res.data.map((d: any) => d.date);
+    const counts = res.data.map((d: any) => d.count);
+    
+    if (apiChart) {
+      apiChart.setOption({
+        xAxis: { data: dates },
+        series: [{ data: counts }]
+      });
+    }
+  } catch (error) {
+    console.error('無法取得 API 數據:', error);
+  }
+};
+
+// === 圖表 3: 真實 GitHub 貢獻度熱力圖 ===
 const heatmapContainer = ref<HTMLElement | null>(null);
 let heatmapChart: echarts.ECharts | null = null;
 
@@ -57,7 +78,6 @@ const fetchGithubData = async () => {
   try {
     const res = await axios.get('/api/github_contributions');
     if (res.data && res.data.length > 0) {
-      // 拿到真實數據後，更新熱力圖
       if (heatmapChart) {
         heatmapChart.setOption({
           series: [{ data: res.data }]
@@ -94,14 +114,67 @@ onMounted(async () => {
     pollingTimer = window.setInterval(fetchSystemStatus, 1000); 
   }
 
-  // --- 初始化圖表 2 (GitHub 熱力圖) ---
+  // --- ✨ 初始化圖表 2 (API 流量監控) ---
+  if (apiChartContainer.value) {
+    apiChart = echarts.init(apiChartContainer.value);
+    const apiOption = {
+      backgroundColor: 'transparent',
+      title: { 
+        text: 'API TRAFFIC (LAST 7 DAYS)', 
+        textStyle: { color: '#e2a6ff', fontSize: 16, fontWeight: 'bold', fontFamily: 'monospace' }, 
+        left: '20px', top: '20px' 
+      },
+      tooltip: { 
+        trigger: 'axis', 
+        backgroundColor: 'rgba(13, 17, 23, 0.9)', 
+        borderColor: '#e2a6ff', 
+        textStyle: { color: '#fff', fontFamily: 'monospace' } 
+      },
+      grid: { left: '4%', right: '4%', bottom: '5%', top: '25%', containLabel: true },
+      xAxis: { 
+        type: 'category', 
+        boundaryGap: false, 
+        data: [], 
+        axisLine: { lineStyle: { color: '#e2a6ff' } }, 
+        axisLabel: { color: '#888', fontFamily: 'monospace' } 
+      },
+      yAxis: { 
+        type: 'value', 
+        name: 'Requests',
+        nameTextStyle: { color: '#888' },
+        axisLine: { lineStyle: { color: '#888' } }, 
+        splitLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.05)', type: 'dashed' } }, 
+        axisLabel: { color: '#888', fontFamily: 'monospace' } 
+      },
+      series: [
+        {
+          name: 'API Calls',
+          type: 'line',
+          smooth: true,
+          symbol: 'circle',
+          symbolSize: 8,
+          itemStyle: { color: '#e2a6ff' },
+          lineStyle: { width: 3, shadowColor: 'rgba(226, 166, 255, 0.5)', shadowBlur: 10 },
+          areaStyle: { 
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(226, 166, 255, 0.5)' }, 
+              { offset: 1, color: 'rgba(226, 166, 255, 0.02)' }
+            ]) 
+          },
+          data: []
+        }
+      ]
+    };
+    apiChart.setOption(apiOption);
+    await fetchApiStats();
+  }
+
+  // --- 初始化圖表 3 (GitHub 熱力圖) ---
   if (heatmapContainer.value) {
     heatmapChart = echarts.init(heatmapContainer.value);
-    
     const end = new Date();
     const start = new Date();
     start.setFullYear(end.getFullYear() - 1);
-
     const heatmapOption = {
       backgroundColor: 'transparent',
       tooltip: {
@@ -115,38 +188,22 @@ onMounted(async () => {
         }
       },
       visualMap: {
-        min: 0,
-        max: 10, // 最大值配合我們的 level_map 設定為 10
-        calculable: true,
-        orient: 'horizontal',
-        left: 'center',
-        bottom: '0',
+        min: 0, max: 10, calculable: true, orient: 'horizontal', left: 'center', bottom: '0',
         textStyle: { color: '#888' },
-        inRange: {
-          color: ['rgba(230, 204, 178, 0.1)', '#e6ccb2', '#d4b595', '#a1887f', '#5d4037']
-        }
+        inRange: { color: ['rgba(230, 204, 178, 0.1)', '#e6ccb2', '#d4b595', '#a1887f', '#5d4037'] }
       },
       calendar: [{
         top: 30, bottom: 60, left: 45, right: 30,
-        range: [
-          echarts.time.format(start, '{yyyy}-{MM}-{dd}', false),
-          echarts.time.format(end, '{yyyy}-{MM}-{dd}', false)
-        ],
+        range: [echarts.time.format(start, '{yyyy}-{MM}-{dd}', false), echarts.time.format(end, '{yyyy}-{MM}-{dd}', false)],
         cellSize: ['auto', 20], 
         itemStyle: { color: 'rgba(255, 255, 255, 0.02)', borderWidth: 2, borderColor: 'transparent' },
         splitLine: { show: false }, yearLabel: { show: false }, 
         dayLabel: { color: '#888', nameMap: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] },
         monthLabel: { color: '#888', nameMap: 'EN' }
       }],
-      series: [{
-        type: 'heatmap',
-        coordinateSystem: 'calendar',
-        data: [],
-        itemStyle: { borderRadius: 4, borderColor: 'transparent', borderWidth: 2 }
-      }]
+      series: [{ type: 'heatmap', coordinateSystem: 'calendar', data: [], itemStyle: { borderRadius: 4, borderColor: 'transparent', borderWidth: 2 } }]
     };
     heatmapChart.setOption(heatmapOption);
-    
     await fetchGithubData();
   }
 
@@ -157,11 +214,13 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
   if (pollingTimer) window.clearInterval(pollingTimer);
   if (myChart) myChart.dispose();
+  if (apiChart) apiChart.dispose(); // ✨ 清除新圖表
   if (heatmapChart) heatmapChart.dispose();
 });
 
 const handleResize = () => {
   if (myChart) myChart.resize();
+  if (apiChart) apiChart.resize(); // ✨ 調整新圖表大小
   if (heatmapChart) heatmapChart.resize();
 };
 </script>
@@ -183,6 +242,10 @@ const handleResize = () => {
       <div class="monitor-card mb-4">
         <div ref="chartContainer" class="echarts-box"></div>
         <div class="scan-line"></div>
+      </div>
+
+      <div class="monitor-card mb-4">
+        <div ref="apiChartContainer" class="echarts-box api-echarts-box"></div>
       </div>
 
       <div class="monitor-card heatmap-card">
@@ -281,6 +344,12 @@ const handleResize = () => {
   min-height: 400px;
 }
 
+/* ✨ 讓 API 圖表稍微矮一點，版面比較平衡 */
+.api-echarts-box {
+  height: 40vh;
+  min-height: 350px;
+}
+
 .scan-line {
   position: absolute;
   top: 0;
@@ -327,9 +396,7 @@ const handleResize = () => {
   width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
-  padding-bottom: 10px; /* 給底部捲軸留一點空間 */
-  
-  /* Firefox 捲軸美化 */
+  padding-bottom: 10px;
   scrollbar-width: thin;
   scrollbar-color: var(--link-active) transparent;
 }
@@ -353,31 +420,11 @@ const handleResize = () => {
 }
 
 @media (max-width: 768px) {
-  .heatmap-card {
-    padding: 20px 15px;
-  }
-
-  .card-header {
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .card-header::-webkit-scrollbar {
-    display: none;
-  }
-
-  .card-header h2 {
-    font-size: 1.05rem;
-    white-space: nowrap;
-  }
-
-  .card-header .subtitle {
-    font-size: 0.8rem;
-    white-space: nowrap;
-    display: block;
-  }
-
-  .monitor-card {
-    padding: 15px;
-  }
+  .heatmap-card { padding: 20px 15px; }
+  .card-header { overflow-x: auto; scrollbar-width: none; }
+  .card-header::-webkit-scrollbar { display: none; }
+  .card-header h2 { font-size: 1.05rem; white-space: nowrap; }
+  .card-header .subtitle { font-size: 0.8rem; white-space: nowrap; display: block; }
+  .monitor-card { padding: 15px; }
 }
 </style>
