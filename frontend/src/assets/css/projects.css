@@ -1,0 +1,262 @@
+/* =========================================
+   專案頁面全域與標題排版
+========================================= */
+.projects-page {
+  min-height: 100vh;
+  padding: 100px 20px 60px;
+  display: flex;
+  justify-content: center;
+}
+
+.projects-container {
+  width: 100%;
+  max-width: 1200px;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 2.5rem;
+  background: var(--gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.subtitle {
+  color: var(--text-color);
+  opacity: 0.8;
+  margin-top: 10px;
+  font-size: 1.1rem;
+}
+
+.status-message {
+  text-align: center;
+  font-size: 1.2rem;
+  color: var(--text-color);
+  padding: 50px 0;
+}
+
+.status-message.error {
+  color: #ff4d4f;
+}
+
+/* =========================================
+   網格排版 (Grid) 終極防護
+========================================= */
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 30px;
+  align-items: stretch;
+}
+.project-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
+  border-radius: 12px;
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+  width: 85%;
+}
+
+.project-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--card-hover-shadow);
+  border-color: var(--link-active);
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.folder-icon i {
+  font-size: 2.5rem;
+  color: var(--link-active);
+}
+
+.icon-link {
+  font-size: 1.2rem;
+  color: var(--text-color);
+  opacity: 0.6;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.icon-link:hover {
+  opacity: 1;
+  color: var(--link-active);
+}
+
+.project-title {
+  font-size: 1.4rem;
+  color: var(--text-color);
+  margin: 0 0 15px 0;
+}
+
+/* 專案描述：最強硬的多行截斷設定 */
+.project-desc {
+  color: var(--text-color);
+  opacity: 0.8;
+  font-size: 0.95rem;
+  line-height: 1.6em;
+  height: 6.4em; 
+  margin-bottom: 20px;
+  display: -webkit-box;
+  -webkit-line-clamp: 4; 
+  line-clamp: 4;         
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-all; 
+}
+
+/* --- 技術標籤 --- */
+.tech-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto; /* 自動推到卡片最底部 */
+}
+
+.tech-tag {
+  font-size: 0.8rem;
+  font-family: monospace;
+  color: var(--link-active);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+/* =========================================
+   彈出視窗 (Modal) 全文閱讀樣式
+========================================= */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(5px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.modal-content {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 85vh; /* 防止內容太長超出螢幕 */
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: transparent;
+  border: none;
+  color: var(--text-color);
+  font-size: 1.5rem;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: 0.3s;
+  z-index: 10;
+}
+
+.modal-close-btn:hover {
+  opacity: 1;
+  color: var(--link-active);
+  transform: scale(1.1);
+}
+
+.modal-header {
+  padding: 30px 30px 10px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-title {
+  font-size: 1.8rem;
+  color: var(--text-color);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.modal-body {
+  padding: 20px 30px;
+  overflow-y: auto; /* 內文過長可捲動 */
+  flex-grow: 1;
+}
+
+/* 捲軸美化 */
+.modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+.modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modal-body::-webkit-scrollbar-thumb {
+  background: var(--link-active);
+  border-radius: 10px;
+}
+
+.modal-desc {
+  color: var(--text-color);
+  opacity: 0.9;
+  font-size: 1.05rem;
+  line-height: 1.8;
+  white-space: pre-wrap; /* 完美保留換行符號 */
+  margin: 0;
+}
+
+.modal-footer {
+  padding: 20px 30px;
+  border-top: 1px solid var(--border-color);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Vue 彈出視窗轉場動畫 */
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+.modal-fade-enter-active .modal-content,
+.modal-fade-leave-active .modal-content {
+  transition: transform 0.3s ease;
+}
+.modal-fade-enter-from .modal-content,
+.modal-fade-leave-to .modal-content {
+  transform: scale(0.95) translateY(20px);
+}

@@ -52,6 +52,7 @@ class ProjectModel(Base):
     title = Column(String, index=True)
     description = Column(Text)
     tech_stack = Column(String)
+    content = Column(Text, nullable=True)
 
 class CodeSnippetModel(Base):
     __tablename__ = "code_snippets"
@@ -104,6 +105,7 @@ class ProjectSchema(BaseModel):
     title: str
     description: Optional[str] = None
     tech_stack: Optional[str] = None
+    content: Optional[str] = None
     class Config:
         from_attributes = True
 
@@ -111,6 +113,7 @@ class ProjectCreate(BaseModel):
     title: str
     description: Optional[str] = None
     tech_stack: Optional[str] = None
+    content: Optional[str] = None
 
 class CodeSnippetCreate(BaseModel):
     title: str
@@ -402,6 +405,7 @@ def update_project(project_id: int, project: ProjectCreate, db: Session = Depend
     db_project.title = project.title
     db_project.description = project.description
     db_project.tech_stack = project.tech_stack
+    db_project.content = project.content
     
     db.commit()
     return {"message": "Project updated"}

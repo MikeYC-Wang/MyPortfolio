@@ -91,7 +91,7 @@ onMounted(async () => {
     };
     myChart.setOption(option);
     await fetchSystemStatus(); 
-    pollingTimer = window.setInterval(fetchSystemStatus, 5000); 
+    pollingTimer = window.setInterval(fetchSystemStatus, 1000); 
   }
 
   // --- 初始化圖表 2 (GitHub 熱力圖) ---

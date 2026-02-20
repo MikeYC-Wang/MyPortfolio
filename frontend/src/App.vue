@@ -32,7 +32,14 @@ const handleIntroComplete = () => {
 // 初始化時確保主題正確
 onMounted(() => {
   initTheme();
+
+  console.log(
+    "%c🚀 系統連線成功 | Welcome to MikeYC's Terminal",
+    "color: #00f2ff; font-size: 16px; font-weight: bold; background: #222; padding: 10px; border-radius: 5px;"
+  );
+  console.log("Looking for the source code? Let's have a chat!");
 });
+
 </script>
 
 <template>
@@ -57,6 +64,7 @@ onMounted(() => {
         <nav class="nav-links desktop-only">
           <RouterLink to="/">首頁</RouterLink>
           <RouterLink to="/lab">靈感碎片</RouterLink>
+          <RouterLink to="/projects">專案作品</RouterLink>
           <RouterLink to="/blog">個人部落格</RouterLink>
           <RouterLink to="/admin">後台管理</RouterLink>
           <RouterLink to="/dashboard">控制台</RouterLink>
@@ -81,6 +89,7 @@ onMounted(() => {
         <nav class="mobile-nav-links">
           <RouterLink to="/" @click="closeMobileMenu">首頁</RouterLink>
           <RouterLink to="/lab" @click="closeMobileMenu">靈感碎片</RouterLink>
+          <RouterLink to="/projects" @click="closeMobileMenu">專案作品</RouterLink>
           <RouterLink to="/blog" @click="closeMobileMenu">個人部落格</RouterLink>
           <RouterLink to="/admin" @click="closeMobileMenu">後台管理</RouterLink>
           <RouterLink to="/dashboard" @click="closeMobileMenu">系統監控</RouterLink>
