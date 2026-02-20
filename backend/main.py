@@ -5,6 +5,8 @@ import datetime
 import secrets
 import psutil
 import GPUtil
+import requests
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException, File, UploadFile, Request, status
 from fastapi.staticfiles import StaticFiles
@@ -433,3 +435,37 @@ def get_system_status():
         "ram": psutil.virtual_memory().percent,
         "gpu": gpu_usage
     }
+
+# ==========================================
+# GitHub 真實貢獻度抓取 API
+# ==========================================
+@app.get("/api/github_contributions")
+def get_github_contributions():
+    username = "MikeYC-Wang"
+    url = f"https://github.com/users/{username}/contributions"
+    
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        res = requests.get(url, headers=headers)
+        soup = BeautifulSoup(res.text, 'html.parser')
+        
+        data = []
+
+        days = soup.find_all('td', class_='ContributionCalendar-day')
+        
+        for day in days:
+            date = day.get('data-date')
+            level = day.get('data-level')
+            
+            if not date or not level:
+                continue
+
+            level_map = {'0': 0, '1': 1, '2': 3, '3': 6, '4': 10}
+            count = level_map.get(level, 0)
+            
+            data.append([date, count])
+            
+        return data
+    except Exception as e:
+        print(f"GitHub 抓取錯誤: {e}")
+        return []

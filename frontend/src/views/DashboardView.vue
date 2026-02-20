@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import * as echarts from 'echarts';
 import axios from 'axios';
 
+// === 圖表 1: 伺服器監控 (保持原樣) ===
 const chartContainer = ref<HTMLElement | null>(null);
 let myChart: echarts.ECharts | null = null;
 let pollingTimer: number | null = null;
@@ -11,12 +12,12 @@ const MAX_POINTS = 30;
 const timeData = ref<string[]>([]);
 const cpuData = ref<number[]>([]);
 const ramData = ref<number[]>([]);
-const gpuData = ref<number[]>([]); // ✨ 新增 GPU 陣列
+const gpuData = ref<number[]>([]); 
 
 const fetchSystemStatus = async () => {
   try {
     const res = await axios.get('/api/system_status');
-    const { cpu, ram, gpu } = res.data; // ✨ 接收 GPU 數據
+    const { cpu, ram, gpu } = res.data; 
     
     const now = new Date();
     const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
@@ -24,13 +25,13 @@ const fetchSystemStatus = async () => {
     timeData.value.push(timeStr);
     cpuData.value.push(cpu);
     ramData.value.push(ram);
-    gpuData.value.push(gpu); // ✨ 存入 GPU 陣列
+    gpuData.value.push(gpu); 
 
     if (timeData.value.length > MAX_POINTS) {
       timeData.value.shift();
       cpuData.value.shift();
       ramData.value.shift();
-      gpuData.value.shift(); // ✨ 同步剔除最舊的 GPU 數據
+      gpuData.value.shift(); 
     }
 
     if (myChart) {
@@ -39,7 +40,7 @@ const fetchSystemStatus = async () => {
         series: [
           { data: cpuData.value }, 
           { data: ramData.value },  
-          { data: gpuData.value }  // ✨ 對應第三個 series (GPU)
+          { data: gpuData.value }  
         ]
       });
     }
@@ -48,129 +49,120 @@ const fetchSystemStatus = async () => {
   }
 };
 
+// === 圖表 2: 真實 GitHub 貢獻度熱力圖 ===
+const heatmapContainer = ref<HTMLElement | null>(null);
+let heatmapChart: echarts.ECharts | null = null;
+
+const fetchGithubData = async () => {
+  try {
+    const res = await axios.get('/api/github_contributions');
+    if (res.data && res.data.length > 0) {
+      // 拿到真實數據後，更新熱力圖
+      if (heatmapChart) {
+        heatmapChart.setOption({
+          series: [{ data: res.data }]
+        });
+      }
+    }
+  } catch (error) {
+    console.error('無法取得 GitHub 數據:', error);
+  }
+};
+
+// === 生命週期 ===
 onMounted(async () => {
+  // --- 初始化圖表 1 (伺服器監控) ---
   if (chartContainer.value) {
     myChart = echarts.init(chartContainer.value); 
-
     const option = {
-      // 青色(CPU), 紫色(RAM), 駭客綠(GPU)
       color: ['#00f2ff', '#bd00ff', '#00ff41'], 
       backgroundColor: 'transparent',
-      title: {
-        text: 'SERVER PERFORMANCE MONITOR',
-        textStyle: { color: '#00f2ff', fontSize: 16, fontWeight: 'bold', fontFamily: 'monospace' },
-        left: '20px',
-        top: '20px'
-      },
-      tooltip: {
-        trigger: 'axis',
-        backgroundColor: 'rgba(13, 17, 23, 0.8)',
-        borderColor: '#00f2ff',
-        textStyle: { color: '#fff', fontFamily: 'monospace' },
-        axisPointer: {
-          type: 'cross',
-          label: { backgroundColor: '#00f2ff', color: '#000' },
-          lineStyle: { color: '#00f2ff', type: 'dashed' }
-        }
-      },
-      legend: {
-        data: ['CPU Usage (%)', 'RAM Usage (%)', 'GPU Usage (%)'], 
-        textStyle: { color: '#888' },
-        top: '60px',
-        right: '30px'
-      },
-      grid: {
-        left: '4%', right: '4%', bottom: '5%', top: '25%', containLabel: true,
-        show: false 
-      },
-      xAxis: {
-        type: 'category',
-        boundaryGap: false,
-        data: [], 
-        axisLine: { lineStyle: { color: '#00f2ff' } },
-        axisLabel: { color: '#888', fontFamily: 'monospace' },
-        axisTick: { show: false },
-        splitLine: { 
-            show: true, 
-            lineStyle: { color: 'rgba(0, 242, 255, 0.1)', type: 'dashed' } 
-        }
-      },
-      yAxis: [
-        {
-          type: 'value',
-          name: 'Usage (%)',
-          min: 0, max: 100,
-          axisLine: { lineStyle: { color: '#888' } },
-          axisLabel: { color: '#888', formatter: '{value} %' },
-          splitLine: { lineStyle: { color: 'rgba(136, 136, 136, 0.2)', type: 'dashed' } },
-          nameTextStyle: { color: '#888' }
-        }
-      ],
+      title: { text: 'SERVER PERFORMANCE MONITOR', textStyle: { color: '#00f2ff', fontSize: 16, fontWeight: 'bold', fontFamily: 'monospace' }, left: '20px', top: '20px' },
+      tooltip: { trigger: 'axis', backgroundColor: 'rgba(13, 17, 23, 0.8)', borderColor: '#00f2ff', textStyle: { color: '#fff', fontFamily: 'monospace' }, axisPointer: { type: 'cross', label: { backgroundColor: '#00f2ff', color: '#000' }, lineStyle: { color: '#00f2ff', type: 'dashed' } } },
+      legend: { data: ['CPU Usage (%)', 'RAM Usage (%)', 'GPU Usage (%)'], textStyle: { color: '#888' }, top: '60px', right: '30px' },
+      grid: { left: '4%', right: '4%', bottom: '5%', top: '25%', containLabel: true, show: false },
+      xAxis: { type: 'category', boundaryGap: false, data: [], axisLine: { lineStyle: { color: '#00f2ff' } }, axisLabel: { color: '#888', fontFamily: 'monospace' }, axisTick: { show: false }, splitLine: { show: true, lineStyle: { color: 'rgba(0, 242, 255, 0.1)', type: 'dashed' } } },
+      yAxis: [{ type: 'value', name: 'Usage (%)', min: 0, max: 100, axisLine: { lineStyle: { color: '#888' } }, axisLabel: { color: '#888', formatter: '{value} %' }, splitLine: { lineStyle: { color: 'rgba(136, 136, 136, 0.2)', type: 'dashed' } }, nameTextStyle: { color: '#888' } }],
       series: [
-        // CPU
-        {
-          name: 'CPU Usage (%)',
-          type: 'line',
-          smooth: true,
-          symbol: 'none',
-          lineStyle: { width: 3, shadowColor: 'rgba(0, 242, 255, 0.5)', shadowBlur: 10, shadowOffsetY: 5 },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(0, 242, 255, 0.5)' },
-              { offset: 1, color: 'rgba(0, 242, 255, 0.05)' }
-            ])
-          },
-          data: [] 
-        },
-        // RAM
-        {
-          name: 'RAM Usage (%)', 
-          type: 'line',
-          smooth: true,
-          symbol: 'none',
-          lineStyle: { width: 3, shadowColor: 'rgba(189, 0, 255, 0.5)', shadowBlur: 10, shadowOffsetY: 5 },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(189, 0, 255, 0.5)' },
-              { offset: 1, color: 'rgba(189, 0, 255, 0.05)' }
-            ])
-          },
-          data: [] 
-        },
-        // GPU
-        {
-          name: 'GPU Usage (%)', 
-          type: 'line',
-          smooth: true,
-          symbol: 'none',
-          lineStyle: { width: 3, shadowColor: 'rgba(0, 255, 65, 0.5)', shadowBlur: 10, shadowOffsetY: 5 },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(0, 255, 65, 0.5)' },
-              { offset: 1, color: 'rgba(0, 255, 65, 0.05)' }
-            ])
-          },
-          data: [] 
-        }
+        { name: 'CPU Usage (%)', type: 'line', smooth: true, symbol: 'none', lineStyle: { width: 3, shadowColor: 'rgba(0, 242, 255, 0.5)', shadowBlur: 10, shadowOffsetY: 5 }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(0, 242, 255, 0.5)' }, { offset: 1, color: 'rgba(0, 242, 255, 0.05)' }]) }, data: [] },
+        { name: 'RAM Usage (%)', type: 'line', smooth: true, symbol: 'none', lineStyle: { width: 3, shadowColor: 'rgba(189, 0, 255, 0.5)', shadowBlur: 10, shadowOffsetY: 5 }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(189, 0, 255, 0.5)' }, { offset: 1, color: 'rgba(189, 0, 255, 0.05)' }]) }, data: [] },
+        { name: 'GPU Usage (%)', type: 'line', smooth: true, symbol: 'none', lineStyle: { width: 3, shadowColor: 'rgba(0, 255, 65, 0.5)', shadowBlur: 10, shadowOffsetY: 5 }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(0, 255, 65, 0.5)' }, { offset: 1, color: 'rgba(0, 255, 65, 0.05)' }]) }, data: [] }
       ]
     };
-
     myChart.setOption(option);
-    window.addEventListener('resize', handleResize);
-
     await fetchSystemStatus(); 
-    pollingTimer = window.setInterval(fetchSystemStatus, 10000); 
+    pollingTimer = window.setInterval(fetchSystemStatus, 5000); 
   }
+
+  // --- 初始化圖表 2 (GitHub 熱力圖) ---
+  if (heatmapContainer.value) {
+    heatmapChart = echarts.init(heatmapContainer.value);
+    
+    const end = new Date();
+    const start = new Date();
+    start.setFullYear(end.getFullYear() - 1);
+
+    const heatmapOption = {
+      backgroundColor: 'transparent',
+      tooltip: {
+        position: 'top',
+        backgroundColor: 'rgba(44, 44, 44, 0.9)',
+        borderColor: '#d4b595', 
+        textStyle: { color: '#fff' },
+        formatter: function (p: any) {
+          const format = echarts.time.format(p.data[0], '{yyyy}-{MM}-{dd}', false);
+          return `${format} <br/> 貢獻指標: <span style="color:#e6ccb2; font-weight:bold;">${p.data[1]}</span>`;
+        }
+      },
+      visualMap: {
+        min: 0,
+        max: 10, // 最大值配合我們的 level_map 設定為 10
+        calculable: true,
+        orient: 'horizontal',
+        left: 'center',
+        bottom: '0',
+        textStyle: { color: '#888' },
+        inRange: {
+          color: ['rgba(230, 204, 178, 0.1)', '#e6ccb2', '#d4b595', '#a1887f', '#5d4037']
+        }
+      },
+      calendar: [{
+        top: 30, bottom: 60, left: 30, right: 30,
+        range: [
+          echarts.time.format(start, '{yyyy}-{MM}-{dd}', false),
+          echarts.time.format(end, '{yyyy}-{MM}-{dd}', false)
+        ],
+        cellSize: ['auto', 20], 
+        itemStyle: { color: 'rgba(255, 255, 255, 0.02)', borderWidth: 2, borderColor: 'transparent' },
+        splitLine: { show: false }, yearLabel: { show: false }, 
+        dayLabel: { color: '#888', nameMap: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] },
+        monthLabel: { color: '#888', nameMap: 'EN' }
+      }],
+      series: [{
+        type: 'heatmap',
+        coordinateSystem: 'calendar',
+        data: [],
+        itemStyle: { borderRadius: 4, borderColor: 'transparent', borderWidth: 2 }
+      }]
+    };
+    heatmapChart.setOption(heatmapOption);
+    
+    await fetchGithubData();
+  }
+
+  window.addEventListener('resize', handleResize);
 });
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
   if (pollingTimer) window.clearInterval(pollingTimer);
   if (myChart) myChart.dispose();
+  if (heatmapChart) heatmapChart.dispose();
 });
 
 const handleResize = () => {
   if (myChart) myChart.resize();
+  if (heatmapChart) heatmapChart.resize();
 };
 </script>
 
@@ -180,16 +172,25 @@ const handleResize = () => {
       
       <div class="header-actions">
         <h1 class="page-title">
-          <i class="fa-solid fa-gauge"></i> 系統監控控制台 </h1>
+          <i class="fa-solid fa-server"></i> 系統監控與數據分析
+        </h1>
         
         <RouterLink to="/" class="back-btn">
           <i class="fa-solid fa-arrow-left"></i> 返回首頁
         </RouterLink>
       </div>
 
-      <div class="monitor-card">
+      <div class="monitor-card mb-4">
         <div ref="chartContainer" class="echarts-box"></div>
         <div class="scan-line"></div>
+      </div>
+
+      <div class="monitor-card heatmap-card">
+        <div class="card-header">
+          <h2><i class="fa-brands fa-github"></i> 開發活躍度 (Contribution Heatmap)</h2>
+          <span class="subtitle">近一年的程式碼提交紀錄</span>
+        </div>
+        <div ref="heatmapContainer" class="heatmap-box"></div>
       </div>
 
     </div>
@@ -197,10 +198,10 @@ const handleResize = () => {
 </template>
 
 <style scoped>
-/* 頁面外層，維持滿版，文字顏色吃全域設定 */
+/* --- 全域排版 --- */
 .dashboard-page {
   min-height: 100vh;
-  padding: 80px 20px 40px; 
+  padding: 80px 20px 60px; 
   display: flex;
   justify-content: center;
 }
@@ -210,7 +211,10 @@ const handleResize = () => {
   max-width: 1200px;
 }
 
-/* 標題與按鈕的排版 */
+.mb-4 {
+  margin-bottom: 30px;
+}
+
 .header-actions {
   display: flex;
   justify-content: space-between;
@@ -220,7 +224,6 @@ const handleResize = () => {
   gap: 15px;
 }
 
-/* 套用漸層文字與 FontAwesome */
 .page-title {
   margin: 0;
   font-size: 2rem;
@@ -233,7 +236,6 @@ const handleResize = () => {
   gap: 12px;
 }
 
-/* 統一使用 Theme.css 的按鈕變數 */
 .back-btn {
   display: inline-flex;
   align-items: center;
@@ -254,7 +256,7 @@ const handleResize = () => {
   transform: translateY(-2px);
 }
 
-/* 讓圖表外框完全吃 Theme.css 的卡片設定 */
+/* --- 卡片共用樣式 --- */
 .monitor-card {
   position: relative;
   background-color: var(--card-bg);
@@ -272,11 +274,10 @@ const handleResize = () => {
 
 .echarts-box {
   width: 100%;
-  height: 65vh;
-  min-height: 450px;
+  height: 55vh;
+  min-height: 400px;
 }
 
-/* 輕微的科技感掃描線 */
 .scan-line {
   position: absolute;
   top: 0;
@@ -293,5 +294,34 @@ const handleResize = () => {
 @keyframes scan {
   0% { top: -5%; }
   100% { top: 105%; }
+}
+
+/* --- ✨ 熱力圖專屬樣式 --- */
+.heatmap-card {
+  padding: 30px;
+}
+
+.card-header {
+  margin-bottom: 10px;
+  text-align: left;
+}
+
+.card-header h2 {
+  margin: 0 0 5px 0;
+  font-size: 1.4rem;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-header .subtitle {
+  font-size: 0.9rem;
+  color: #888;
+}
+
+.heatmap-box {
+  width: 100%;
+  height: 250px; /* 熱力圖不需要太高 */
 }
 </style>
