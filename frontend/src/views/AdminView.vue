@@ -450,7 +450,7 @@ onMounted(() => {
 }
 :deep(pre) { background: #282c34; padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 10px 0; }
 :deep(code) { font-family: 'Fira Code', monospace; }
-:deep(img) { max-width: 100%; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+:deep(img) { max-width: 100%; border-radius: 8px; margin: 0 0; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 :deep(blockquote) { border-left: 4px solid var(--link-active); padding-left: 1rem; color: var(--link-color); }
 :deep(ul), :deep(ol) { padding-left: 20px; }
 :deep(a) { color: #58a6ff; text-decoration: none; }

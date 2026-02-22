@@ -221,7 +221,7 @@
   box-sizing: border-box; 
 }
 
-.image-preview { height: 40px; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-color); }
+.image-preview { height: 350px; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-color); }
 .image-preview img { height: 100%; }
 
 /* --- 雙欄編輯器 --- */
@@ -334,10 +334,11 @@
 /* 專案編輯版面佈局 */
 .project-editor-wrapper {
   padding: 10px;
-  display: grid;
-  grid-template-columns: 1fr 450px; 
+  display: flex;        
+  flex-direction: column; 
   gap: 30px;
-  align-items: start;
+  align-items: stretch; 
+  width: 100%;
 }
 
 .project-form-card {
@@ -487,10 +488,6 @@
 }
 
 @media (max-width: 1200px) {
-  .project-editor-wrapper {
-    grid-template-columns: 1fr;
-  }
-  
   .project-preview-section {
     order: 2;
   }
