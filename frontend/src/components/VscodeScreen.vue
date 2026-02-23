@@ -60,7 +60,7 @@ const colors = {
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const pythonIcon = new Image();
-pythonIcon.src = '/python-logo.png';
+pythonIcon.src = `${import.meta.env.BASE_URL}python-logo.png`;
 let isPythonIconLoaded = false;
 
 pythonIcon.onload = () => {
