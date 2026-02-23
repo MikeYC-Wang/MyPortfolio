@@ -1,10 +1,16 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import Toast, { type PluginOptions, POSITION } from 'vue-toastification'
-import 'vue-toastification/dist/index.css' // 引入 Toast CSS
+import 'vue-toastification/dist/index.css'
+import axios from 'axios'
 
 import App from './App.vue'
 import router from './router'
+
+axios.defaults.baseURL = import.meta.env.PROD 
+  ? 'https://portfolio-api-a21d.onrender.com' 
+  : ''
+axios.defaults.withCredentials = true
 
 const app = createApp(App)
 
