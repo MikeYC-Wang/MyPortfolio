@@ -149,7 +149,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* ✨ 加入 Markdown 內文的專屬樣式，確保圖片不會撐破，且程式碼有高亮 */
 :deep(.content-preview) {
   color: var(--text-color);
   line-height: 1.8;
@@ -182,7 +181,6 @@ onMounted(async () => {
   font-family: 'Fira Code', monospace;
 }
 
-/* 確保圖片自適應大小，不會撐破 Modal */
 :deep(.content-preview img) {
   max-width: 100%;
   height: auto;
