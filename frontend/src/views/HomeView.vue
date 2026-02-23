@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 // import axios from 'axios';
+import axios from '@/api';
 import { useRouter } from 'vue-router';
 import { useTheme } from '@/composables/useTheme';
 
