@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import * as echarts from 'echarts';
-import axios from 'axios';
+// import axios from 'axios';
+import axios from '@/api';
 
 // === 圖表 1: 伺服器監控 ===
 const chartContainer = ref<HTMLElement | null>(null);

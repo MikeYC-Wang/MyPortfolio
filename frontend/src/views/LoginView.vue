@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import axios from 'axios';
+// import axios from 'axios';
+import axios from '@/api';
 import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import '@/assets/css/login.css';

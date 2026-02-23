@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
+// import axios from 'axios';
+import axios from '@/api';
 import '@/assets/css/lab.css';
 
 // 定義資料結構，加入 slug

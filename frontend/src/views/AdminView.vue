@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import axios from 'axios';
+// import axios from 'axios';
+import axios from '@/api';
 import { useRouter } from 'vue-router';
 import MarkdownIt from 'markdown-it';
 import hljs from 'highlight.js';

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import axios from 'axios';
-// ✨ 引入 Markdown 解析器與高亮套件
+// import axios from 'axios';
+import axios from '@/api';
 import MarkdownIt from 'markdown-it';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-dark.css';
@@ -12,7 +12,7 @@ interface Project {
   title: string;
   description: string;
   tech_stack: string;
-  content?: string; // ✨ 新增 content 屬性
+  content?: string;
 }
 
 const projects = ref<Project[]>([]);
