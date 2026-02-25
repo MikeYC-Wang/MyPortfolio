@@ -88,10 +88,19 @@ defineProps<{ isDark: boolean }>();
 :global(body.theme-light) .highlight { color: #d63384; }
 
 /* Header 動畫 */
-.section-header { text-align: center; margin-bottom: 50px; opacity: 0; transform: translateY(30px); transition: all 0.8s ease; }
+.section-header { 
+  text-align: center; 
+  margin-bottom: 50px; 
+  opacity: 0; 
+  transform: translateY(30px); 
+  transition: all 0.8s ease; 
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  padding: 40px 0;
+}
 .section-header.visible { opacity: 1; transform: translateY(0); }
 h2 { font-size: 2.5rem; margin-bottom: 10px; color: inherit; }
-.subtitle { color: #888; font-size: 1.1rem; margin-bottom: 33.2px;}
+.subtitle { color: #888; font-size: 1.1rem; margin-bottom: 33.2px;text-align:center!important;}
 .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
 
 @media (max-width: 768px) { .content-grid { grid-template-columns: 1fr; } }
