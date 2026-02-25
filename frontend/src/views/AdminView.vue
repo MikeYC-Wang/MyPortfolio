@@ -379,8 +379,8 @@ onMounted(() => {
         </div>
       </div>
 
-      <div v-else class="project-editor-wrapper">
-        <div class="project-top-section" style="display: flex; gap: 30px; flex-wrap: wrap; width: 100%;">
+      <div v-else class="editor-body-wrapper">
+        <div class="project-top-section" style="display: flex; gap: 30px; flex-wrap: wrap; width: 100%; margin-bottom: 20px;">
           <div class="project-form-card" style="flex: 1; min-width: 300px;">
             <div class="input-group">
               <label>專案名稱</label>
@@ -396,7 +396,7 @@ onMounted(() => {
             </div>
           </div>
           
-          <div class="project-preview-section" style="width: 350px;">
+          <div class="project-preview-section" style="width: 450px;">
             <h3 class="preview-title" style="margin-top: 0;">外觀卡片預覽</h3>
             <div class="project-card-preview">
               <div class="project-card">
@@ -415,10 +415,10 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="editor-area" style="width: 100%;">
+        <div class="editor-area1" style="width: 100%;">
           <div class="editor-pane">
             <div class="pane-header">
-              <span class="pane-label">完整內文 (Markdown 語法)</span>
+              <span class="pane-label">Markdown 編輯區</span>
               <div class="toolbar">
                 <button @click="insertMarkdown('h1')">H1</button>
                 <button @click="insertMarkdown('h2')">H2</button>
@@ -436,7 +436,7 @@ onMounted(() => {
             ></textarea>
           </div>
           <div class="preview-pane">
-            <div class="pane-header"><span class="pane-label">內文即時預覽</span></div>
+            <div class="pane-header"><span class="pane-label">即時預覽</span></div>
             <div class="markdown-body content-preview" v-html="renderedProjectContent"></div>
           </div>
         </div>
