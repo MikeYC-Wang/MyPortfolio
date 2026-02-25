@@ -248,29 +248,26 @@ def read_root():
 @app.post("/api/login", response_model=Token)
 def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     client_ip = request.client.host
-    # ==========================================
-    # 🛑 暫時關閉：防暴力破解 (429 Too Many Requests)
-    # 開發測試時先註解掉，以免一直被鎖
-    # ==========================================
-    # ten_mins_ago = datetime.datetime.utcnow() - datetime.timedelta(minutes=10)
-    # failed_attempts = db.query(LoginLogModel).filter(
-    #     LoginLogModel.ip_address == client_ip,
-    #     LoginLogModel.is_success == False,
-    #     LoginLogModel.attempt_time >= ten_mins_ago
-    # ).count()
 
-    # if failed_attempts >= 3:
-    #     # 紀錄這次被阻擋的嘗試
-    #     log = LoginLogModel(ip_address=client_ip, username_attempt=form_data.username, is_success=False)
-    #     db.add(log)
-    #     db.commit()
-    #     
-    #     raise HTTPException(
-    #         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-    #         detail=f"Too many failed attempts ({failed_attempts + 1}). Please try again later.",
-    #         headers={"WWW-Authenticate": "Bearer"},
-    #     )
-    # ==========================================
+    # 3 分鐘內失敗超過 3 次即鎖定 3 分鐘
+    three_mins_ago = datetime.datetime.utcnow() - datetime.timedelta(minutes=3)
+    failed_attempts = db.query(LoginLogModel).filter(
+        LoginLogModel.ip_address == client_ip,
+        LoginLogModel.is_success == False,
+        LoginLogModel.attempt_time >= three_mins_ago
+    ).count()
+
+    if failed_attempts >= 3:
+        # 紀錄這次被阻擋的嘗試
+        log = LoginLogModel(ip_address=client_ip, username_attempt=form_data.username, is_success=False)
+        db.add(log)
+        db.commit()
+        
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="密碼錯誤次數過多，請於 3 分鐘後再試。",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     admin = db.query(AdminModel).filter(AdminModel.username == form_data.username).first()
     if not admin or not verify_password(form_data.password, admin.hashed_password):
