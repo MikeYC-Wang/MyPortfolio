@@ -348,8 +348,12 @@ onMounted(() => {
               <span v-if="isUploading">上傳中...</span><span v-else>上傳封面</span>
               <input type="file" @change="handleFileUpload" accept="image/*" class="file-input" />
             </label>
-            <div v-if="postForm.cover_image" class="image-preview"><img :src="postForm.cover_image" alt="Cover" /></div>
-            <input v-else v-model="postForm.cover_image" type="text" placeholder="或貼上圖片網址..." class="url-input" />
+            
+            <input v-model="postForm.cover_image" type="text" placeholder="或貼上圖片網址..." class="url-input" />
+            
+            <div v-if="postForm.cover_image" class="image-preview">
+              <img :src="postForm.cover_image" alt="Cover" />
+            </div>
           </div>
         </div>
 
