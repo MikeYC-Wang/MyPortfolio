@@ -6,6 +6,7 @@ import HackerIntro from '@/components/HackerIntro.vue';
 import CustomCursor from '@/components/CustomCursor.vue';
 import { useTheme } from '@/composables/useTheme';
 import "./assets/css/Theme.css";
+import BackToTop from '@/components/BackToTop.vue';
 
 // 使用共用的主題狀態
 const { isDark, toggleTheme, initTheme } = useTheme();
@@ -104,6 +105,7 @@ onMounted(() => {
         </transition>
       </router-view>
     </main>
+    <BackToTop />
   </div>
 </template>
 

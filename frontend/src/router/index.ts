@@ -8,6 +8,7 @@ import LoginView from '@/views/LoginView.vue'
 import LabEditorView from '@/views/LabEditorView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import ProjectView from '@/views/ProjectView.vue'
+import NotFoundView from '@/views/NotFoundView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -43,6 +44,11 @@ const router = createRouter({
       name: 'projects',
       component: ProjectView
     },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: NotFoundView
+    }
   ],
 
   scrollBehavior(to, from, savedPosition) {
