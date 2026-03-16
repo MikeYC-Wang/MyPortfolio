@@ -77,7 +77,6 @@
   transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease; 
   width: auto;
   cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .main-content.light-mode .project-card { background: #fff; border-color: #eee; color: #333; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
@@ -115,6 +114,127 @@
 /* 淺色模式的小點點 */
 .main-content.light-mode .dot { background: #ccc; }
 .main-content.light-mode .dot.active { background: #007bff; }
+
+/* ==========================================
+   首頁：最新文章區塊 (動態 Zig-Zag Layout)
+========================================== */
+.feature-container {
+  display: flex;
+  flex-direction: column;
+  gap: 100px; /* 每篇文章之間的垂直距離 */
+}
+
+/* 單篇文章列：預設為 圖左文右 */
+.feature-row {
+  display: flex;
+  align-items: center;
+  gap: 60px;
+}
+
+/* 奇數列：文左圖右 */
+.feature-row.reverse {
+  flex-direction: row-reverse;
+}
+
+/* 圖片區塊 (直接當背景圖使用，方便控制比例) */
+.feature-img {
+  flex: 1;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-color);
+  position: relative;
+  min-height: 300px; /* 確保圖片有足夠高度 */
+}
+
+.blog-cover-img {
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.feature-img:hover .blog-cover-img {
+  transform: scale(1.05); /* 滑鼠游標移過去會有微微放大的精緻感 */
+}
+
+.blog-cover-img.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.3);
+  font-size: 5rem;
+  color: #4dabf7;
+}
+
+.main-content.light-mode .blog-cover-img.placeholder {
+  background: #f0f0f0;
+  color: #007bff;
+}
+
+/* 文字區塊 */
+.feature-text {
+  flex: 2;
+}
+
+.feature-text h3 {
+  font-size: 2rem;
+  color: var(--link-active);
+  margin-bottom: 20px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.feature-text p {
+  font-size: 1.1rem;
+  color: var(--text-color);
+  line-height: 1.8;
+  margin-bottom: 30px;
+  opacity: 0.85;
+}
+
+/* 按鈕樣式 */
+.feature-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 28px;
+  background: var(--btn-bg);
+  color: var(--text-color);
+  text-decoration: none;
+  border-radius: 30px;
+  border: 1px solid var(--border-color);
+  font-weight: bold;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.feature-btn:hover {
+  background: var(--link-active);
+  color: #000;
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 255, 255, 0.3); /* 按鈕發光效果 */
+}
+
+/* ==========================================
+   手機版 RWD 處理 (縮小螢幕時變成圖上文下)
+========================================== */
+@media (max-width: 900px) {
+  .feature-container { gap: 70px; }
+  
+  .feature-row, 
+  .feature-row.reverse {
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .feature-img { width: 100%; }
+  .blog-cover-img { min-height: 250px; }
+  .feature-text { text-align: center; }
+  .feature-btn { margin: 0 auto; }
+}
 
 /* === Footer === */
 .footer { text-align: center; padding: 40px; background: #000; color: #fff; margin-top: 0; border-top: 1px solid #333; }

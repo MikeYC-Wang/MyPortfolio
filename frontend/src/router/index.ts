@@ -43,7 +43,17 @@ const router = createRouter({
       name: 'projects',
       component: ProjectView
     },
-  ]
+  ],
+
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) {
+      // 點擊瀏覽器上一頁/下一頁時，回到原本的位置
+      return savedPosition;
+    } else {
+      // 切換到新頁面時，強制回到最上方
+      return { top: 0 };
+    }
+  }
 })
 
 router.beforeEach((to, from, next) => {
