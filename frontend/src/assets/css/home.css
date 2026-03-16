@@ -443,3 +443,115 @@
     text-align: center;
   }
 }
+
+/* ==========================================
+   技術堆疊跑馬燈 (Tech Stack Marquee)
+========================================== */
+.tech-marquee-wrapper {
+  width: 100%;
+  background-color: #05070a; /* 設一個極深的顏色作為緩衝帶 */
+  padding: 35px 0;
+  overflow: hidden;
+  position: relative;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.main-content.light-mode .tech-marquee-wrapper {
+  background-color: #fff;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* 左右漸層遮罩：讓跑馬燈有從邊緣「淡入淡出」的高級感 */
+.tech-marquee-wrapper::before,
+.tech-marquee-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 150px;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.tech-marquee-wrapper::before {
+  left: 0;
+  background: linear-gradient(to right, #05070a 0%, transparent 100%);
+}
+
+.tech-marquee-wrapper::after {
+  right: 0;
+  background: linear-gradient(to left, #05070a 0%, transparent 100%);
+}
+
+.main-content.light-mode .tech-marquee-wrapper::before {
+  background: linear-gradient(to right, #fff 0%, transparent 100%);
+}
+.main-content.light-mode .tech-marquee-wrapper::after {
+  background: linear-gradient(to left, #fff 0%, transparent 100%);
+}
+
+/* 滾動軌道 */
+.marquee-track {
+  display: flex;
+  width: max-content;
+  /* 45s 控制滾動速度，因為你的項目很多，稍微放慢一點比較好閱讀 */
+  animation: marquee-scroll 45s linear infinite; 
+}
+
+/* 滑鼠移過去時自動暫停，讓面試官看清楚 */
+.marquee-track:hover {
+  animation-play-state: paused; 
+}
+
+/* 單個技術標籤 */
+.marquee-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #444; /* 預設暗暗的 */
+  margin: 0 40px;
+  font-family: 'Fira Code', monospace;
+  transition: color 0.3s ease, transform 0.3s ease;
+  cursor: default;
+}
+
+.main-content.light-mode .marquee-item {
+  color: #ddd;
+}
+
+/* 滑鼠 Hover 到單個技術上時會發光放大 (套用你的招牌奶茶色) */
+.marquee-item:hover {
+  color: #d4b595; 
+  transform: scale(1.15);
+  text-shadow: 0 0 15px rgba(212, 181, 149, 0.4);
+}
+
+.marquee-item i {
+  font-size: 2.2rem;
+}
+
+/* 無縫滾動的關鍵影格 */
+@keyframes marquee-scroll {
+  0% { transform: translateX(0); }
+  /* 往左推 50% 剛好是一個完美的循環 */
+  100% { transform: translateX(-50%); } 
+}
+
+/* 手機版微調 */
+@media (max-width: 768px) {
+  .marquee-item {
+    font-size: 1.2rem;
+    margin: 0 25px;
+  }
+  .marquee-item i {
+    font-size: 1.8rem;
+  }
+  .tech-marquee-wrapper::before,
+  .tech-marquee-wrapper::after {
+    width: 60px;
+  }
+}

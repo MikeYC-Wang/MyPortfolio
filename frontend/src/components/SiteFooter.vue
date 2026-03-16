@@ -38,7 +38,7 @@
 <style scoped>
 .site-footer {
   width: 100%;
-  padding: 80px 20px 20px;
+  padding: 30px 20px 20px;
   background-color: #080b10;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   color: #aaa;

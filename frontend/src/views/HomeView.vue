@@ -245,6 +245,40 @@ onUnmounted(() => {
         </div>
       </section>
 
+      <div class="tech-marquee-wrapper">
+        <div class="marquee-track">
+          <div class="marquee-item"><i class="fa-brands fa-wordpress"></i> WordPress</div>
+          <div class="marquee-item"><i class="fa-brands fa-html5"></i> HTML5</div>
+          <div class="marquee-item"><i class="fa-brands fa-css3-alt"></i> CSS3</div>
+          <div class="marquee-item"><i class="fa-brands fa-js"></i> JavaScript</div>
+          <div class="marquee-item"><i class="fa-brands fa-typescript"></i> TypeScript</div>
+          <div class="marquee-item"><i class="fa-brands fa-vuejs"></i> Vue.js</div>
+          <div class="marquee-item"><i class="fa-brands fa-bootstrap"></i> Bootstrap</div>
+          <div class="marquee-item"><i class="fa-brands fa-node-js"></i> Node.js</div>
+          <div class="marquee-item"><i class="fa-solid fa-c"></i> C#</div>
+          <div class="marquee-item"><i class="fa-brands fa-python"></i> Python</div>
+          <div class="marquee-item"><i class="fa-brands fa-windows"></i> .NET</div>
+          <div class="marquee-item"><i class="fa-solid fa-microchip"></i> Arduino</div>
+          <div class="marquee-item"><i class="fa-brands fa-git-alt"></i> Git</div>
+          <div class="marquee-item"><i class="fa-brands fa-npm"></i> npm</div>
+          
+          <div class="marquee-item"><i class="fa-brands fa-wordpress"></i> WordPress</div>
+          <div class="marquee-item"><i class="fa-brands fa-html5"></i> HTML5</div>
+          <div class="marquee-item"><i class="fa-brands fa-css3-alt"></i> CSS3</div>
+          <div class="marquee-item"><i class="fa-brands fa-js"></i> JavaScript</div>
+          <div class="marquee-item"><i class="fa-brands fa-typescript"></i> TypeScript</div>
+          <div class="marquee-item"><i class="fa-brands fa-vuejs"></i> Vue.js</div>
+          <div class="marquee-item"><i class="fa-brands fa-bootstrap"></i> Bootstrap</div>
+          <div class="marquee-item"><i class="fa-brands fa-node-js"></i> Node.js</div>
+          <div class="marquee-item"><i class="fa-solid fa-c"></i> C#</div>
+          <div class="marquee-item"><i class="fa-brands fa-python"></i> Python</div>
+          <div class="marquee-item"><i class="fa-brands fa-windows"></i> .NET</div>
+          <div class="marquee-item"><i class="fa-solid fa-microchip"></i> Arduino</div>
+          <div class="marquee-item"><i class="fa-brands fa-git-alt"></i> Git</div>
+          <div class="marquee-item"><i class="fa-brands fa-npm"></i> npm</div>
+        </div>
+      </div>
+
       <section id="projects" class="full-section bg-gray">
         <div class="projects-area">
           
