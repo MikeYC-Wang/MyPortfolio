@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-// import axios from 'axios';
 import axios from '@/api';
 import MarkdownIt from 'markdown-it';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-dark.css';
 import SiteFooter from '@/components/SiteFooter.vue';
+import { useToast } from 'vue-toastification'; // 引入 Toast 提示
 
 const route = useRoute();
 const router = useRouter();
+const toast = useToast();
 const post = ref<any>(null);
 const loading = ref(true);
 
@@ -27,16 +28,61 @@ const md = new MarkdownIt({
   linkify: true,
   typographer: true,
   highlight: function (str: string, lang: string): string {
+    let codeHtml = '';
     if (lang && hljs.getLanguage(lang)) {
       try {
-        return '<pre class="hljs"><code>' +
-               hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
-               '</code></pre>';
+        codeHtml = hljs.highlight(str, { language: lang, ignoreIllegals: true }).value;
       } catch (__) {}
     }
-    return '<pre class="hljs"><code>' + escapeHtml(str) + '</code></pre>';
+    if (!codeHtml) {
+      codeHtml = escapeHtml(str);
+    }
+
+    return `
+      <div class="code-block-wrapper">
+        <button class="copy-btn" aria-label="Copy code">
+          <i class="fa-regular fa-copy"></i>
+        </button>
+        <pre class="hljs"><code>${codeHtml}</code></pre>
+      </div>
+    `;
   }
 });
+
+const handleContentClick = async (e: MouseEvent) => {
+  const target = e.target as HTMLElement;
+  // 判斷點擊的是不是 copy-btn (或者是按鈕裡面的 icon)
+  const btn = target.closest('.copy-btn') as HTMLButtonElement;
+  
+  if (!btn) return; // 如果點的不是複製按鈕，就不理他
+  
+  const wrapper = btn.closest('.code-block-wrapper');
+  if (!wrapper) return;
+  
+  const codeBlock = wrapper.querySelector('code');
+  if (!codeBlock) return;
+  
+  try {
+    // 呼叫瀏覽器原生剪貼簿 API 寫入程式碼
+    await navigator.clipboard.writeText(codeBlock.innerText);
+    
+    // 按鈕視覺回饋：變成打勾
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> 成功';
+    btn.classList.add('copied');
+    toast.success('程式碼已複製到剪貼簿！');
+    
+    // 2 秒後恢復原狀
+    setTimeout(() => {
+      btn.innerHTML = originalHtml;
+      btn.classList.remove('copied');
+    }, 2000);
+    
+  } catch (err) {
+    console.error('複製失敗', err);
+    toast.error('複製失敗，請手動選取複製');
+  }
+};
 
 onMounted(async () => {
   try {
@@ -58,9 +104,9 @@ onMounted(async () => {
         <i class="fa-solid fa-spinner fa-spin"></i> Loading...
       </div>
       
-      <article v-else-if="post" class="markdown-body">
+      <article v-else-if="post" class="markdown-body" @click="handleContentClick">
         <RouterLink to="/blog" class="back-link">
-          <i class="fa-solid fa-arrow-left"></i> 回列表
+           <i class="fa-solid fa-arrow-left"></i> 回列表
         </RouterLink>
 
         <div class="post-header">
@@ -102,15 +148,15 @@ onMounted(async () => {
   color: var(--link-color);
 }
 
-.post-header { margin-bottom: 2rem; text-align: center; margin-top: 1rem; } /* 增加一點 margin-top 避開按鈕 */
+.post-header { margin-bottom: 2rem; text-align: center; margin-top: 1rem; }
 h1 { font-size: 2.5rem; margin-bottom: 1rem; color: var(--text-color); }
 .main-cover { width: 100%; border-radius: 12px; margin-bottom: 3rem; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
 
-/* ✨ 修改後的按鈕樣式 */
+/* ✨ 修改後的返回按鈕樣式 */
 .back-link { 
-  position: absolute; /* 絕對定位 */
-  top: 20px;          /* 距離容器頂部 20px */
-  left: 20px;         /* 距離容器左邊 20px */
+  position: absolute; 
+  top: 20px;          
+  left: 20px;         
   
   display: inline-flex; 
   align-items: center; 
@@ -132,10 +178,12 @@ h1 { font-size: 2.5rem; margin-bottom: 1rem; color: var(--text-color); }
   }
 }
 
+/* ==========================================
+   Markdown 基礎排版樣式
+========================================== */
 :deep(.content) { line-height: 1.8; font-size: 1.1rem; }
 :deep(h1), :deep(h2), :deep(h3) { margin-top: 2rem; margin-bottom: 1rem; color: var(--link-active); }
 :deep(p) { margin-bottom: 1.5rem; color: var(--text-color); opacity: 0.9; }
-:deep(pre) { background: #282c34; padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1.5rem 0; }
 :deep(code) { font-family: 'Fira Code', monospace; }
 :deep(a) { color: #58a6ff; text-decoration: none; }
 :deep(a:hover) { text-decoration: underline; }
@@ -143,4 +191,83 @@ h1 { font-size: 2.5rem; margin-bottom: 1rem; color: var(--text-color); }
 :deep(li) { margin-bottom: 0.5rem; }
 :deep(blockquote) { border-left: 4px solid var(--link-active); padding-left: 1rem; color: #8b949e; margin: 1.5rem 0; }
 :deep(img) { max-width: 100%; border-radius: 8px; }
+
+/* ==========================================
+   程式碼區塊樣式美化 (Mac 視窗風格 + 複製按鈕)
+========================================== */
+/* 程式碼外層容器 */
+:deep(.code-block-wrapper) {
+  position: relative;
+  border-radius: 8px;
+  background: #282c34;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+/* 模擬 Mac 的三個小圓點 */
+:deep(.code-block-wrapper::before) {
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ff5f56;
+  box-shadow: 20px 0 0 #ffbd2e, 40px 0 0 #27c93f;
+  z-index: 1;
+}
+
+:deep(.code-block-wrapper pre) {
+  margin: 0 !important;
+  padding: 0px 20px 20px 20px !important; 
+  background: transparent !important; 
+  border-radius: 0;
+  overflow-x: auto;
+  line-height: 1.6;
+}
+
+:deep(.code-block-wrapper code) {
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  display: block; 
+}
+
+/* 複製按鈕樣式 */
+:deep(.copy-btn) {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #aaa;
+  height: 30px; 
+  padding: 0 12px; 
+  display: inline-flex;
+  align-items: center; 
+  justify-content: center; 
+  /* 👈 修改 3：移除 line-height: 1，讓 flexbox 自然垂直置中字體與 icon */
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  cursor: pointer;
+  gap: 6px;
+  transition: all 0.2s ease;
+  z-index: 2;
+}
+
+:deep(.copy-btn:hover) {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* 點擊成功後的按鈕狀態 */
+:deep(.copy-btn.copied) {
+  background: var(--milk-tea-dark, #d4b595);
+  color: #121212;
+  border-color: transparent;
+  font-weight: bold;
+}
 </style>
