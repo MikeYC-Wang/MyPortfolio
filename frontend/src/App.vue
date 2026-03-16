@@ -240,7 +240,8 @@ header {
   z-index: 99;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+  padding-top: 40px;
 }
 
 .mobile-nav-links {

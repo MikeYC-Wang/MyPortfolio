@@ -246,6 +246,14 @@ const initScene = async () => {
   controls.enablePan = false;
   controls.mouseButtons = { LEFT: null as any, MIDDLE: null as any, RIGHT: THREE.MOUSE.ROTATE };
 
+  // 手機版防捲軸劫持 (Scroll Hijacking)
+  if (window.innerWidth < 768) {
+    controls.enabled = false; // 手機版直接關閉 3D 控制器
+    renderer.domElement.style.touchAction = 'auto'; // 強制把滑動權限還給網頁捲軸
+  } else {
+    controls.enabled = true; // 電腦版維持正常
+  }
+
   hudScene = new THREE.Scene();
   const aspect = window.innerWidth / window.innerHeight;
   hudCamera = new THREE.OrthographicCamera(-aspect, aspect, 1, -1, 0.1, 10);
