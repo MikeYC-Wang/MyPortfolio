@@ -251,7 +251,7 @@ onUnmounted(() => {
           <div class="marquee-item"><i class="fa-brands fa-html5"></i> HTML5</div>
           <div class="marquee-item"><i class="fa-brands fa-css3-alt"></i> CSS3</div>
           <div class="marquee-item"><i class="fa-brands fa-js"></i> JavaScript</div>
-          <div class="marquee-item"><i class="fa-brands fa-typescript"></i> TypeScript</div>
+          <!-- <div class="marquee-item"><i class="fa-brands fa-typescript"></i> TypeScript</div> -->
           <div class="marquee-item"><i class="fa-brands fa-vuejs"></i> Vue.js</div>
           <div class="marquee-item"><i class="fa-brands fa-bootstrap"></i> Bootstrap</div>
           <div class="marquee-item"><i class="fa-brands fa-node-js"></i> Node.js</div>
@@ -266,7 +266,7 @@ onUnmounted(() => {
           <div class="marquee-item"><i class="fa-brands fa-html5"></i> HTML5</div>
           <div class="marquee-item"><i class="fa-brands fa-css3-alt"></i> CSS3</div>
           <div class="marquee-item"><i class="fa-brands fa-js"></i> JavaScript</div>
-          <div class="marquee-item"><i class="fa-brands fa-typescript"></i> TypeScript</div>
+          <!-- <div class="marquee-item"><i class="fa-brands fa-typescript"></i> TypeScript</div> -->
           <div class="marquee-item"><i class="fa-brands fa-vuejs"></i> Vue.js</div>
           <div class="marquee-item"><i class="fa-brands fa-bootstrap"></i> Bootstrap</div>
           <div class="marquee-item"><i class="fa-brands fa-node-js"></i> Node.js</div>

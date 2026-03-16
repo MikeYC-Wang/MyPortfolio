@@ -41,7 +41,6 @@
 </template>
 
 <script setup lang="ts">
-// 自定義指令：捲動觸發動畫
 const vObserve = {
   mounted: (el: HTMLElement) => {
     const observer = new IntersectionObserver((entries) => {
@@ -61,9 +60,9 @@ defineProps<{ isDark: boolean }>();
 // === 真實數據 ===
 const experiences = [
   {
-    title: '全端工程師 (Full Stack Engineer)',
+    title: '前端工程師 (Front End Engineer)',
     company: '方達科技股份有限公司',
-    duration: '2025.07 - 至今',
+    duration: '2025.07 - 2026.03',
     icon: 'fa-solid fa-globe',
     details: [
       '使用 ASP.NET Web Form、.NET Core 、C# 進行開發，負責前後端系統建置。',
@@ -80,7 +79,9 @@ const experiences = [
     details: [
       '隸屬於自動化程式設計一部，深入了解自動化流程如何提升產線效率。',
       '培養解決實務問題的能力，將所學技能應用於實際專案。',
-      '協作開發內部工具，提升團隊作業效能。'
+      '追蹤及處理生產測試log相關問題。',
+      '品質管理平台系統維運、系統備份／還原、資料庫備份／還原、系統憑證更新。',
+      '品質管理平台系統前端使用者介面（UI）修改與維護。'
     ]
   },
   {
@@ -138,7 +139,6 @@ h2 {
   position: relative;
 }
 
-/* 中央垂直線 */
 .timeline-container::after {
   content: '';
   position: absolute;

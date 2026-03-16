@@ -3,7 +3,7 @@
     <div class="footer-container">
       <div class="footer-brand">
         <h3 class="footer-logo">MikeYC Wang</h3>
-        <p>Full-Stack Developer crafting digital experiences. <br> 喜歡探索新技術，專注於打造兼具效能與美感的網頁應用。</p>
+        <p>Web Developer crafting digital experiences. <br> 喜歡探索新技術，專注於打造兼具效能與美感的網頁應用。</p>
       </div>
 
       <div class="footer-links">
