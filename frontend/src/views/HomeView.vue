@@ -233,13 +233,13 @@ onUnmounted(() => {
     <div class="main-content" :class="{ 'light-mode': !isDark, 'visible': isEntered }">
       
       <section id="about" class="full-section bg-gray">
-        <div class="container">
+        <div class="container" style="max-width: 1600px;">
           <AboutMe :isDark="isDark" />
         </div>
       </section>
 
       <section id="experience" class="full-section bg-dark">
-        <div class="container">
+        <div class="container" style="max-width: 1600px;">
           <ExperienceTimeline :isDark="isDark" />
         </div>
       </section>
