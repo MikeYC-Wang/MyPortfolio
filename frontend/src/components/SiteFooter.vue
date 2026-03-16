@@ -9,11 +9,11 @@
       <div class="footer-links">
         <h4>Explore</h4>
         <div class="link-grid">
-          <RouterLink to="/lab"><i class="fa-solid fa-flask"></i> 靈感碎片</RouterLink>
+          <RouterLink to="/lab"><i class="fa-brands fa-codepen"></i> 靈感碎片</RouterLink>
           <RouterLink to="/projects"><i class="fa-solid fa-code-branch"></i> 專案作品</RouterLink>
           <RouterLink to="/blog"><i class="fa-solid fa-pen-nib"></i> 個人部落格</RouterLink>
-          <RouterLink to="/admin"><i class="fa-solid fa-gear"></i> 後台管理</RouterLink>
-          <RouterLink to="/dashboard"><i class="fa-solid fa-chart-line"></i> 控制台</RouterLink>
+          <RouterLink to="/admin"><i class="fa-solid fa-user-secret"></i> 後台管理</RouterLink>
+          <RouterLink to="/dashboard"><i class="fa-solid fa-server"></i> 控制台</RouterLink>
         </div>
       </div>
 
