@@ -12,6 +12,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import IntroScene from '@/components/IntroScene.vue';
 import AboutMe from '@/components/AboutMe.vue';
 import ExperienceTimeline from '@/components/ExperienceTimeline.vue';
+import SiteFooter from '@/components/SiteFooter.vue';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -348,9 +349,33 @@ onUnmounted(() => {
         </div>
       </section>
 
-      <footer class="footer">
-        <p>©2026 MikeYC-Wang.</p>
-      </footer>
+      <section id="lab-teaser" class="full-section bg-gray">
+        <div class="container" style="max-width: 1600px;">
+          <div class="feature-row">
+            
+            <div class="feature-img lab-visual-container">
+              <div class="morphing-blob"></div>
+              <div class="morphing-blob-shadow"></div>
+            </div>
+            
+            <div class="feature-text">
+              <div class="badge">Experimental</div>
+              <h2 class="section-title" style="margin-bottom: 20px;">
+                <i class="fa-solid fa-flask"></i> 靈感碎片 (Lab)
+              </h2>
+              <p>
+                這裡是我存放奇思妙想的程式碼遊樂場。從酷炫的 CSS 動畫、WebGL 著色器，到各種實驗性質的 UI 互動特效。每一次的無聊嘗試，都可能成為下一個專案的亮點。
+              </p>
+              <RouterLink to="/lab" class="feature-btn" style="margin-top: 20px;">
+                進入實驗室探索 <i class="fa-solid fa-arrow-right"></i>
+              </RouterLink>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <SiteFooter />
     </div>
   </div>
 </template>

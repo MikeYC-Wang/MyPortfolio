@@ -6,6 +6,7 @@ import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import '@/assets/css/login.css';
 import '@/assets/css/Theme.css';
+import SiteFooter from '@/components/SiteFooter.vue';
 
 const router = useRouter();
 const toast = useToast();
@@ -46,60 +47,63 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="login-container">
-    <div class="login-box">
-      <div class="login-header">
-        <i class="fa-solid fa-user-secret"></i>
-        <h2>後台管理系統</h2>
-        <p>System Login</p>
-      </div>
-      
-      <form @submit.prevent="handleLogin" class="login-form">
-        <div class="input-group">
-          <label>管理員帳號</label>
-          <input 
-            v-model="username" 
-            type="text" 
-            placeholder="請輸入帳號" 
-            required 
-            autofocus 
-          />
+  <div>
+    <div class="login-container">
+      <div class="login-box">
+        <div class="login-header">
+          <i class="fa-solid fa-user-secret"></i>
+          <h2>後台管理系統</h2>
+          <p>System Login</p>
         </div>
         
-        <div class="input-group password-group">
-          <label>密碼</label>
-          <div class="password-wrapper">
+        <form @submit.prevent="handleLogin" class="login-form">
+          <div class="input-group">
+            <label>管理員帳號</label>
             <input 
-              v-model="password" 
-              :type="showPassword ? 'text' : 'password'" 
-              placeholder="請輸入密碼" 
+              v-model="username" 
+              type="text" 
+              placeholder="請輸入帳號" 
               required 
+              autofocus 
             />
-            <button 
-              type="button" 
-              class="btn-eye" 
-              @click="showPassword = !showPassword"
-              tabindex="-1"
-            >
-              <i class="fa-solid" :class="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
-            </button>
           </div>
-        </div>
+          
+          <div class="input-group password-group">
+            <label>密碼</label>
+            <div class="password-wrapper">
+              <input 
+                v-model="password" 
+                :type="showPassword ? 'text' : 'password'" 
+                placeholder="請輸入密碼" 
+                required 
+              />
+              <button 
+                type="button" 
+                class="btn-eye" 
+                @click="showPassword = !showPassword"
+                tabindex="-1"
+              >
+                <i class="fa-solid" :class="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+              </button>
+            </div>
+          </div>
 
-        <div v-if="errorMsg" class="error-msg">
-            <i class="fa-solid fa-circle-exclamation"></i>
-            {{ errorMsg }}
-        </div>
+          <div v-if="errorMsg" class="error-msg">
+              <i class="fa-solid fa-circle-exclamation"></i>
+              {{ errorMsg }}
+          </div>
 
-        <button type="submit" class="btn-submit" :disabled="isLoading">
-          <span v-if="isLoading">
-            <i class="fa-solid fa-spinner fa-spin"></i> 驗證中...
-          </span>
-          <span v-else>
-            登入系統 <i class="fa-solid fa-arrow-right"></i>
-          </span>
-        </button>
-      </form>
+          <button type="submit" class="btn-submit" :disabled="isLoading">
+            <span v-if="isLoading">
+              <i class="fa-solid fa-spinner fa-spin"></i> 驗證中...
+            </span>
+            <span v-else>
+              登入系統 <i class="fa-solid fa-arrow-right"></i>
+            </span>
+          </button>
+        </form>
+      </div>
     </div>
+    <SiteFooter />
   </div>
 </template>

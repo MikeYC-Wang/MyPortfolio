@@ -6,6 +6,7 @@ import MarkdownIt from 'markdown-it';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-dark.css';
 import '@/assets/css/projects.css';
+import SiteFooter from '@/components/SiteFooter.vue';
 
 interface Project {
   id: number;
@@ -73,78 +74,81 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="projects-page">
-    <div class="projects-container">
-      
-      <div class="page-header">
-        <h1 class="page-title">
-          <i class="fa-solid fa-code-branch"></i> 專案作品集
-        </h1>
-        <p class="subtitle">開發紀錄與實戰專案</p>
-      </div>
-
-      <div v-if="isLoading" class="status-message">
-        <i class="fa-solid fa-spinner fa-spin"></i> 正在載入作品...
-      </div>
-      <div v-else-if="errorMsg" class="status-message error">
-        <i class="fa-solid fa-triangle-exclamation"></i> {{ errorMsg }}
-      </div>
-
-      <div v-else class="projects-grid">
-        <div 
-          v-for="p in projects" 
-          :key="p.id" 
-          class="project-card"
-          @click="openModal(p)"
-        >
-          <div class="card-top">
-            <div class="folder-icon"><i class="fa-regular fa-folder-open"></i></div>
-          </div>
-          
-          <h2 class="project-title">{{ p.title }}</h2>
-          <p class="project-desc">{{ p.description }}</p>
-          
-          <div class="tech-stack">
-            <span class="tech-tag" v-for="tech in (p.tech_stack ? p.tech_stack.split(',') : [])" :key="tech">
-              {{ tech.trim() }}
-            </span>
-          </div>
+  <div>
+    <div class="projects-page">
+      <div class="projects-container">
+        
+        <div class="page-header">
+          <h1 class="page-title">
+            <i class="fa-solid fa-code-branch"></i> 專案作品集
+          </h1>
+          <p class="subtitle">開發紀錄與實戰專案</p>
         </div>
-      </div>
 
-    </div>
+        <div v-if="isLoading" class="status-message">
+          <i class="fa-solid fa-spinner fa-spin"></i> 正在載入作品...
+        </div>
+        <div v-else-if="errorMsg" class="status-message error">
+          <i class="fa-solid fa-triangle-exclamation"></i> {{ errorMsg }}
+        </div>
 
-    <Transition name="modal-fade">
-      <div v-if="selectedProject" class="modal-overlay" @click.self="closeModal">
-        <div class="modal-content">
-          <button class="modal-close-btn" @click="closeModal">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-          
-          <div class="modal-header">
-            <div class="folder-icon"><i class="fa-regular fa-folder-open"></i></div>
-            <h2 class="modal-title">{{ selectedProject.title }}</h2>
-          </div>
-          
-          <div class="modal-body">
-            <div class="project-summary-box" v-if="selectedProject.description">
-              <p>{{ selectedProject.description }}</p>
+        <div v-else class="projects-grid">
+          <div 
+            v-for="p in projects" 
+            :key="p.id" 
+            class="project-card"
+            @click="openModal(p)"
+          >
+            <div class="card-top">
+              <div class="folder-icon"><i class="fa-regular fa-folder-open"></i></div>
             </div>
             
-            <div v-if="selectedProject.content" class="markdown-body content-preview" v-html="renderedProjectContent"></div>
-          </div>
-          
-          <div class="modal-footer">
+            <h2 class="project-title">{{ p.title }}</h2>
+            <p class="project-desc">{{ p.description }}</p>
+            
             <div class="tech-stack">
-              <span class="tech-tag" v-for="tech in (selectedProject.tech_stack ? selectedProject.tech_stack.split(',') : [])" :key="tech">
+              <span class="tech-tag" v-for="tech in (p.tech_stack ? p.tech_stack.split(',') : [])" :key="tech">
                 {{ tech.trim() }}
               </span>
             </div>
           </div>
         </div>
-      </div>
-    </Transition>
 
+      </div>
+
+      <Transition name="modal-fade">
+        <div v-if="selectedProject" class="modal-overlay" @click.self="closeModal">
+          <div class="modal-content">
+            <button class="modal-close-btn" @click="closeModal">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div class="modal-header">
+              <div class="folder-icon"><i class="fa-regular fa-folder-open"></i></div>
+              <h2 class="modal-title">{{ selectedProject.title }}</h2>
+            </div>
+            
+            <div class="modal-body">
+              <div class="project-summary-box" v-if="selectedProject.description">
+                <p>{{ selectedProject.description }}</p>
+              </div>
+              
+              <div v-if="selectedProject.content" class="markdown-body content-preview" v-html="renderedProjectContent"></div>
+            </div>
+            
+            <div class="modal-footer">
+              <div class="tech-stack">
+                <span class="tech-tag" v-for="tech in (selectedProject.tech_stack ? selectedProject.tech_stack.split(',') : [])" :key="tech">
+                  {{ tech.trim() }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+
+    </div>
+    <SiteFooter />
   </div>
 </template>
 

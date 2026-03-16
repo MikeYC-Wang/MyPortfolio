@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue';
 // import axios from 'axios';
 import axios from '@/api';
 import { RouterLink } from 'vue-router';
+import SiteFooter from '@/components/SiteFooter.vue';
 
 interface Post {
   id: number;
@@ -41,32 +42,35 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="blog-container">
-    <h1 class="page-title"><i class="fa-solid fa-pen-nib"></i> 個人部落格</h1>
+  <div>
+    <div class="blog-container">
+      <h1 class="page-title"><i class="fa-solid fa-pen-nib"></i> 個人部落格</h1>
 
-    <div v-if="loading" class="loading">Loading...</div>
+      <div v-if="loading" class="loading">Loading...</div>
 
-    <div v-else class="post-grid">
-      <div v-for="post in posts" :key="post.id" class="post-card">
-        <div 
-        v-if="post.cover_image" 
-        class="post-cover" 
-        :style="{ backgroundImage: `url(${getImageUrl(post.cover_image)})` }"
-        ></div>
-        <div v-else class="post-cover placeholder">
-            <i class="fa-solid fa-code"></i>
-        </div>
-        
-        <div class="post-content">
-          <h2>{{ post.title }}</h2>
-          <p class="excerpt">{{ getExcerpt(post.content) }}</p>
+      <div v-else class="post-grid">
+        <div v-for="post in posts" :key="post.id" class="post-card">
+          <div 
+          v-if="post.cover_image" 
+          class="post-cover" 
+          :style="{ backgroundImage: `url(${getImageUrl(post.cover_image)})` }"
+          ></div>
+          <div v-else class="post-cover placeholder">
+              <i class="fa-solid fa-code"></i>
+          </div>
           
-          <RouterLink :to="`/blog/${post.id}`" class="read-more-btn">
-            閱讀全文 <i class="fa-solid fa-arrow-right"></i>
-          </RouterLink>
+          <div class="post-content">
+            <h2>{{ post.title }}</h2>
+            <p class="excerpt">{{ getExcerpt(post.content) }}</p>
+            
+            <RouterLink :to="`/blog/${post.id}`" class="read-more-btn">
+              閱讀全文 <i class="fa-solid fa-arrow-right"></i>
+            </RouterLink>
+          </div>
         </div>
       </div>
     </div>
+    <SiteFooter />
   </div>
 </template>
 

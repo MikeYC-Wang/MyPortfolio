@@ -6,6 +6,7 @@ import axios from '@/api';
 import MarkdownIt from 'markdown-it';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-dark.css';
+import SiteFooter from '@/components/SiteFooter.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -51,32 +52,35 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="post-detail-container">
-    <div v-if="loading" class="loading-state">
-      <i class="fa-solid fa-spinner fa-spin"></i> Loading...
-    </div>
-    
-    <article v-else-if="post" class="markdown-body">
-      <RouterLink to="/blog" class="back-link">
-         <i class="fa-solid fa-arrow-left"></i> 回列表
-      </RouterLink>
-
-      <div class="post-header">
-        <h1>{{ post.title }}</h1>
+  <div>
+    <div class="post-detail-container">
+      <div v-if="loading" class="loading-state">
+        <i class="fa-solid fa-spinner fa-spin"></i> Loading...
       </div>
       
-      <img 
-        v-if="post.cover_image" 
-        :src="post.cover_image.startsWith('http') ? post.cover_image : `http://127.0.0.1:8000${post.cover_image}`" 
-        class="main-cover" 
-      />
+      <article v-else-if="post" class="markdown-body">
+        <RouterLink to="/blog" class="back-link">
+          <i class="fa-solid fa-arrow-left"></i> 回列表
+        </RouterLink>
 
-      <div class="content" v-html="md.render(post.content || '')"></div>
-    </article>
+        <div class="post-header">
+          <h1>{{ post.title }}</h1>
+        </div>
+        
+        <img 
+          v-if="post.cover_image" 
+          :src="post.cover_image.startsWith('http') ? post.cover_image : `http://127.0.0.1:8000${post.cover_image}`" 
+          class="main-cover" 
+        />
 
-    <div v-else class="error-state">
-      文章載入錯誤或不存在。
+        <div class="content" v-html="md.render(post.content || '')"></div>
+      </article>
+
+      <div v-else class="error-state">
+        文章載入錯誤或不存在。
+      </div>
     </div>
+    <SiteFooter />
   </div>
 </template>
 

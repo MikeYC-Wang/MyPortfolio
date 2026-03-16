@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import * as echarts from 'echarts';
 // import axios from 'axios';
 import axios from '@/api';
+import SiteFooter from '@/components/SiteFooter.vue';
 
 // === 圖表 1: 伺服器監控 ===
 const chartContainer = ref<HTMLElement | null>(null);
@@ -183,6 +184,8 @@ onMounted(async () => {
         backgroundColor: 'rgba(44, 44, 44, 0.9)',
         borderColor: '#d4b595', 
         textStyle: { color: '#fff' },
+        appendToBody: true,
+        extraCssText: 'z-index: 9999;',
         formatter: function (p: any) {
           const format = echarts.time.format(p.data[0], '{yyyy}-{MM}-{dd}', false);
           return `${format} <br/> 貢獻指標: <span style="color:#e6ccb2; font-weight:bold;">${p.data[1]}</span>`;
@@ -227,40 +230,43 @@ const handleResize = () => {
 </script>
 
 <template>
-  <div class="dashboard-page">
-    <div class="dashboard-wrapper">
-      
-      <div class="header-actions">
-        <h1 class="page-title">
-          <i class="fa-solid fa-server"></i> 系統監控與數據分析
-        </h1>
+  <div>
+    <div class="dashboard-page">
+      <div class="dashboard-wrapper">
         
-        <RouterLink to="/" class="back-btn">
-          <i class="fa-solid fa-arrow-left"></i> 返回首頁
-        </RouterLink>
-      </div>
-
-      <div class="monitor-card mb-4">
-        <div ref="chartContainer" class="echarts-box"></div>
-        <div class="scan-line"></div>
-      </div>
-
-      <div class="monitor-card mb-4">
-        <div ref="apiChartContainer" class="echarts-box api-echarts-box"></div>
-      </div>
-
-      <div class="monitor-card heatmap-card">
-        <div class="card-header">
-          <h2><i class="fa-brands fa-github"></i> 開發活躍度 (Contribution Heatmap)</h2>
-          <span class="subtitle">近一年的程式碼提交紀錄</span>
+        <div class="header-actions">
+          <h1 class="page-title">
+            <i class="fa-solid fa-server"></i> 系統監控與數據分析
+          </h1>
+          
+          <RouterLink to="/" class="back-btn">
+            <i class="fa-solid fa-arrow-left"></i> 返回首頁
+          </RouterLink>
         </div>
-        
-        <div class="heatmap-scroll-wrapper">
-          <div ref="heatmapContainer" class="heatmap-box"></div>
-        </div>
-      </div>
 
+        <div class="monitor-card mb-4">
+          <div ref="chartContainer" class="echarts-box"></div>
+          <div class="scan-line"></div>
+        </div>
+
+        <div class="monitor-card mb-4">
+          <div ref="apiChartContainer" class="echarts-box api-echarts-box"></div>
+        </div>
+
+        <div class="monitor-card heatmap-card">
+          <div class="card-header">
+            <h2><i class="fa-brands fa-github"></i> 開發活躍度 (Contribution Heatmap)</h2>
+            <span class="subtitle">近一年的程式碼提交紀錄</span>
+          </div>
+          
+          <div class="heatmap-scroll-wrapper">
+            <div ref="heatmapContainer" class="heatmap-box"></div>
+          </div>
+        </div>
+
+      </div>
     </div>
+    <SiteFooter />
   </div>
 </template>
 

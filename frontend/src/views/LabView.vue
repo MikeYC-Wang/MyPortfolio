@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 // import axios from 'axios';
 import axios from '@/api';
 import '@/assets/css/lab.css';
+import SiteFooter from '@/components/SiteFooter.vue';
 
 // 定義資料結構，加入 slug
 interface Snippet {
@@ -84,60 +85,63 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="playground-container">
-    <div class="page-header">
-      <div class="title-group">
-        <i class="fa-brands fa-codepen logo-icon"></i>
-        <div>
-          <h1>Code Playground</h1>
-          <span class="subtitle">快來分享你的創意!!!</span>
-        </div>
-      </div>
-
-      <button class="btn-new-pen" @click="createNewPen">
-        <i class="fa-solid fa-plus"></i> New Pen
-      </button>
-    </div>
-
-    <div v-if="isLoading" class="loading">
-      <i class="fa-solid fa-circle-notch fa-spin"></i> Loading Pens...
-    </div>
-
-    <div v-else class="snippets-grid">
-      <div 
-        v-for="item in snippets" 
-        :key="item.id" 
-        class="snippet-card"
-        @click="goToEdit(item.slug)"
-      >
-        <div class="card-header">
-          <div class="dots">
-            <span class="dot red"></span>
-            <span class="dot yellow"></span>
-            <span class="dot green"></span>
-          </div>
-          <span class="card-title">{{ item.title }}</span>
-        </div>
-
-        <div class="iframe-wrapper">
-          <iframe 
-            :srcdoc="getSrcDoc(item)" 
-            frameborder="0" 
-            sandbox="allow-scripts"
-            scrolling="no"
-          ></iframe>
-          <div class="overlay"></div>
-        </div>
-
-        <div class="card-info">
-          <p>{{ item.description || 'No description provided.' }}</p>
-          <div class="tags">
-            <span class="tag tag-html">HTML</span>
-            <span class="tag tag-css">CSS</span>
-            <span class="tag tag-js">JS</span>
+  <div>
+    <div class="playground-container">
+      <div class="page-header">
+        <div class="title-group">
+          <i class="fa-brands fa-codepen logo-icon"></i>
+          <div>
+            <h1>Code Playground</h1>
+            <span class="subtitle">快來分享你的創意!!!</span>
           </div>
         </div>
+
+        <button class="btn-new-pen" @click="createNewPen">
+          <i class="fa-solid fa-plus"></i> New Pen
+        </button>
+      </div>
+
+      <div v-if="isLoading" class="loading">
+        <i class="fa-solid fa-circle-notch fa-spin"></i> Loading Pens...
+      </div>
+
+      <div v-else class="snippets-grid">
+        <div 
+          v-for="item in snippets" 
+          :key="item.id" 
+          class="snippet-card"
+          @click="goToEdit(item.slug)"
+        >
+          <div class="card-header">
+            <div class="dots">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+            </div>
+            <span class="card-title">{{ item.title }}</span>
+          </div>
+
+          <div class="iframe-wrapper">
+            <iframe 
+              :srcdoc="getSrcDoc(item)" 
+              frameborder="0" 
+              sandbox="allow-scripts"
+              scrolling="no"
+            ></iframe>
+            <div class="overlay"></div>
+          </div>
+
+          <div class="card-info">
+            <p>{{ item.description || 'No description provided.' }}</p>
+            <div class="tags">
+              <span class="tag tag-html">HTML</span>
+              <span class="tag tag-css">CSS</span>
+              <span class="tag tag-js">JS</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+    <SiteFooter />
   </div>
 </template>
