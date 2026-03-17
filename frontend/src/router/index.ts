@@ -1,5 +1,4 @@
-// import { createRouter, createWebHistory } from 'vue-router'
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import LabView from '@/views/LabView.vue'
 import BlogView from '@/views/BlogView.vue'
@@ -12,8 +11,7 @@ import ProjectView from '@/views/ProjectView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
 
 const router = createRouter({
-  // history: createWebHistory(import.meta.env.BASE_URL),
-  history: createWebHashHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', name: 'home', component: HomeView },
     { path: '/lab', name: 'lab', component: LabView },
