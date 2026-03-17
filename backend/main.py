@@ -21,6 +21,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.sql import func
 from passlib.context import CryptContext
 from jose import JWTError, jwt
+from collections import Counter
 
 # ==========================================
 # 0. 環境變數與安全設定
@@ -349,10 +350,23 @@ def delete_snippet(slug: str, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Snippet deleted successfully"}
 
-# --- Skills ---
+# --- Skills (自動從專案的 tech_stack 統計) ---
 @app.get("/api/skills", response_model=List[SkillSchema])
 def get_skills(db: Session = Depends(get_db)):
-    return db.query(SkillModel).order_by(SkillModel.skill_order).all()
+    projects = db.query(ProjectModel.tech_stack).filter(ProjectModel.tech_stack.isnot(None)).all()
+    
+    tech_counter = Counter()
+    
+    for p in projects:
+        if p.tech_stack:
+            techs = [t.strip() for t in p.tech_stack.split(',') if t.strip()]
+            tech_counter.update(techs)
+
+    all_techs = tech_counter.most_common()
+    
+    result = [{"category": tech, "score": count} for tech, count in all_techs]
+    
+    return result
 
 # --- Posts (Blog) ---
 @app.get("/api/posts", response_model=List[PostSchema])

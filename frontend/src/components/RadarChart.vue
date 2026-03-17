@@ -1,208 +1,127 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
-import VueApexCharts from 'vue3-apexcharts';
-import axios from 'axios';
-import type { ApexOptions } from 'apexcharts';
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import * as echarts from 'echarts';
+import axios from '@/api';
 
-// 介面定義
-interface Skill {
-  category: string;
-  score: number;
-}
-
-// 支援的圖表類型
-type ChartType = 'bar' | 'donut' | 'radialBar';
-
-const props = defineProps<{
-  isDark: boolean;
-}>();
-
-const skills = ref<Skill[]>([]);
+const props = defineProps<{ isDark: boolean }>();
+const chartContainer = ref<HTMLElement | null>(null);
+let myChart: echarts.ECharts | null = null;
+let resizeObserver: ResizeObserver | null = null;
 const loading = ref(true);
 
-// === 1. 設定預設圖表類型為 'donut' (圓餅圖) ===
-const currentType = ref<ChartType>('donut'); 
+// 🎨 擴充到 15 種獨立漸層色盤 (確保項目再多也夠用！)
+const getGradientColors = () => [
+  new echarts.graphic.LinearGradient(0, 0, 1, 1, [{ offset: 0, color: '#00f2fe' }, { offset: 1, color: '#4facfe' }]), // 亮藍
+  new echarts.graphic.LinearGradient(0, 0, 1, 1, [{ offset: 0, color: '#fa709a' }, { offset: 1, color: '#fee140' }]), // 粉橘
+  new echarts.graphic.LinearGradient(0, 0, 1, 1, [{ offset: 0, color: '#43e97b' }, { offset: 1, color: '#38f9d7' }]), // 螢光綠
+  new echarts.graphic.LinearGradient(0, 0, 1, 1, [{ offset: 0, color: '#b224ef' }, { offset: 1, color: '#7579ff' }]), // 炫紫
+  new echarts.graphic.LinearGradient(0, 0, 1, 1, [{ offset: 0, color: '#f83600' }, { offset: 1, color: '#f9d423' }]), // 烈焰橘
+  new echarts.graphic.LinearGradient(0, 0, 1, 1, [{ offset: 0, color: '#ff0844' }, { offset: 1, color: '#ffb199' }]), // 烈火紅
+  new echarts.graphic.LinearGradient(0, 0, 1, 1, [{ offset: 0, color: '#00c6ff' }, { offset: 1, color: '#0072ff' }]), // 深海藍
+  new echarts.graphic.LinearGradient(0, 0, 1, 1, [{ offset: 0, color: '#16a085' }, { offset: 1, color: '#f4d03f' }]), // 藍綠轉黃
+  new echarts.graphic.LinearGradient(0, 0, 1, 1, [{ offset: 0, color: '#667eea' }, { offset: 1, color: '#764ba2' }]), // 靛紫
+  new echarts.graphic.LinearGradient(0, 0, 1, 1, [{ offset: 0, color: '#11998e' }, { offset: 1, color: '#38ef7d' }]), // 薄荷綠
+  new echarts.graphic.LinearGradient(0, 0, 1, 1, [{ offset: 0, color: '#ff758c' }, { offset: 1, color: '#ff7eb3' }]), // 芭比粉
+  new echarts.graphic.LinearGradient(0, 0, 1, 1, [{ offset: 0, color: '#13547a' }, { offset: 1, color: '#80d0c7' }]), // 青鈦色
+  new echarts.graphic.LinearGradient(0, 0, 1, 1, [{ offset: 0, color: '#f77062' }, { offset: 1, color: '#fe5196' }]), // 珊瑚紅
+  new echarts.graphic.LinearGradient(0, 0, 1, 1, [{ offset: 0, color: '#a18cd1' }, { offset: 1, color: '#fbc2eb' }]), // 柔和紫
+  new echarts.graphic.LinearGradient(0, 0, 1, 1, [{ offset: 0, color: '#00b09b' }, { offset: 1, color: '#96c93d' }]), // 青檸綠
+];
 
-// === 🎨 配色變數 (用於漸層) ===
-const COLORS = ['#00FFFF', '#FFD700', '#00E396', '#775DD0', '#FF4560', '#546E7A', '#26a69a', '#D10CE8'];
-// 深色模式下的漸變高亮色 (科技感)
-const GRADIENT_COLORS_DARK = ['#00C9FF', '#92FE9D', '#FF5F6D', '#7474BF', '#FF8D7E', '#78909C', '#4DB6AC', '#E040FB']; 
-// 淺色模式下的漸變暗色
-const GRADIENT_COLORS_LIGHT = ['#0077B6', '#1E8449', '#CB4335', '#5DADE2', '#C0392B', '#455A64', '#00695C', '#8E24AA']; 
-
-// 根據主題取得文字顏色
-const textColor = computed(() => props.isDark ? '#e0cda9' : '#5d4037');
-
-// ------------------------------------
-// 核心：根據不同圖表類型產生對應的 Series 數據
-// ------------------------------------
-const series = computed(() => {
-  if (skills.value.length === 0) return [];
-
-  if (currentType.value === 'bar') {
-    // GitHub 風格堆疊長條圖 (每個技能是一個獨立 Series)
-    return skills.value.map(skill => ({
-      name: skill.category,
-      data: [skill.score]
-    }));
-  } else {
-    // 圓餅圖 / 徑向圖：Series 是一個單純的數字陣列
-    return skills.value.map(skill => skill.score);
-  }
-});
-
-// ------------------------------------
-// 核心：根據不同圖表類型產生 ApexOptions
-// ------------------------------------
-const chartOptions = computed<ApexOptions>(() => {
-  const isDark = props.isDark;
+const initChart = async (data: any[]) => {
+  await nextTick();
+  if (!chartContainer.value) return;
   
-  // 共用設定
-  const baseOptions: ApexOptions = {
-    chart: {
-      background: 'transparent',
-      toolbar: { show: false },
-      animations: { enabled: true }
-    },
-    theme: {
-      mode: isDark ? 'dark' : 'light',
-      palette: 'palette1' 
-    },
-    colors: COLORS, // 基礎色盤
-    legend: {
-      position: 'bottom',
-      labels: { colors: isDark ? '#fff' : '#333' },
-      itemMargin: { horizontal: 10, vertical: 5 }
-    },
-    dataLabels: {
-      style: {
-        fontSize: '12px',
-        fontWeight: 'bold',
-      },
-      dropShadow: { enabled: false }
-    },
+  if (!myChart) {
+    myChart = echarts.init(chartContainer.value);
+  }
+
+  const chartData = data.length > 0 
+    ? data.map(s => ({ value: s.score, name: s.category }))
+    : [
+        { value: 35, name: 'Vue.js / 前端' },
+        { value: 25, name: '.NET / C#' },
+        { value: 15, name: 'JavaScript / TS' },
+        { value: 15, name: 'Python' },
+        { value: 10, name: 'SQL / 資料庫' }
+      ];
+
+  const option = {
+    backgroundColor: 'transparent',
+    color: getGradientColors(),
     tooltip: {
-      theme: isDark ? 'dark' : 'light'
+      trigger: 'item',
+      backgroundColor: 'rgba(13, 17, 23, 0.9)',
+      borderColor: '#007bff',
+      textStyle: { color: '#fff', fontFamily: 'monospace' },
+      formatter: '{b} : 專案使用 {c} 次 ({d}%)' // 滑鼠懸停顯示次數與自動換算的百分比
     },
-    // === 全域漸層設定 (主要針對圓餅圖生效) ===
-    fill: {
-        type: currentType.value === 'donut' ? 'gradient' : 'solid',
-        gradient: {
-          shade: isDark ? 'dark' : 'light',
-          type: 'horizontal',
-          shadeIntensity: 0.5,
-          gradientToColors: isDark ? GRADIENT_COLORS_DARK : GRADIENT_COLORS_LIGHT,
-          inverseColors: true,
-          opacityFrom: 1,
-          opacityTo: 1,
-          stops: [0, 100]
-        }
-    }
+    legend: {
+      type: 'scroll', 
+      bottom: '2%',
+      left: 'center',
+      textStyle: { 
+        color: props.isDark ? '#e0cda9' : '#5d4037',
+        fontFamily: '"Fira Code", monospace',
+        fontWeight: 'bold',
+        fontSize: 11
+      },
+      itemWidth: 14,
+      itemHeight: 14,
+      icon: 'circle',
+      pageIconColor: '#007bff', // 翻頁按鈕的顏色
+      pageIconInactiveColor: '#555',
+      pageTextStyle: { color: props.isDark ? '#fff' : '#333' }
+    },
+    series: [
+      {
+        name: '技術佔比',
+        type: 'pie',
+        radius: ['40%', '65%'], // 稍微縮小半徑，留空間給旁邊密集的標籤
+        center: ['50%', '42%'],
+        avoidLabelOverlap: true,
+        itemStyle: {
+          borderRadius: 6,
+          borderColor: props.isDark ? '#1e1e1e' : '#fff',
+          borderWidth: 2
+        },
+        label: {
+          show: true,
+          formatter: '{b}\n{d}%', 
+          color: props.isDark ? '#e0cda9' : '#5d4037',
+          fontFamily: '"Fira Code", monospace',
+          fontWeight: 'bold',
+          lineHeight: 16,
+          fontSize: 12
+        },
+        labelLine: {
+          length: 10,
+          length2: 15,
+          smooth: true,
+          lineStyle: {
+            width: 2,
+            color: props.isDark ? 'rgba(224, 205, 169, 0.4)' : 'rgba(93, 64, 55, 0.4)'
+          }
+        },
+        emphasis: {
+          label: { show: true, fontSize: 14, fontWeight: 'bold' },
+          itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' }
+        },
+        data: chartData
+      }
+    ]
   };
 
-  // === 1. 圓餅圖 (Donut) ===
-  if (currentType.value === 'donut') {
-    return {
-      ...baseOptions,
-      chart: { type: 'donut' },
-      labels: skills.value.map(s => s.category),
-      stroke: {
-        show: true,
-        colors: [isDark ? '#1a1a1a' : '#fff'], // 區塊間的間隔線
-        width: 2
-      },
-      plotOptions: {
-        pie: {
-          donut: {
-            size: '65%', // 中空大小
-            labels: {
-              show: true,
-              name: { color: isDark ? '#fff' : '#333' },
-              value: { color: isDark ? '#e0cda9' : '#5d4037' },
-              total: {
-                show: true,
-                label: 'Skills',
-                color: isDark ? '#fff' : '#333',
-                formatter: () => `${skills.value.length} 項`
-              }
-            }
-          }
-        }
-      }
-    };
-  }
+  myChart.setOption(option);
+};
 
-  // === 2. GitHub 風格堆疊長條圖 (Bar) ===
-  if (currentType.value === 'bar') {
-    return {
-      ...baseOptions,
-      chart: {
-        type: 'bar',
-        stacked: true, 
-        stackType: '100%', 
-        toolbar: { show: false }
-      },
-      plotOptions: {
-        bar: {
-          horizontal: true, 
-          borderRadius: 8, 
-          barHeight: '40%', 
-        }
-      },
-      xaxis: {
-        categories: ['Skill Distribution'], 
-        labels: { show: false }, 
-        axisBorder: { show: false },
-        axisTicks: { show: false }
-      },
-      yaxis: { show: false },
-      grid: {
-        show: false, 
-        padding: { top: 0, bottom: 0, left: 0, right: 0 }
-      },
-      stroke: {
-        width: 1,
-        colors: [isDark ? '#2c2c2c' : '#fff'] 
-      },
-      fill: { type: 'solid' } // 長條圖通常用實色比較好看
-    };
-  }
-  
-  // === 3. 徑向圖 (RadialBar) ===
-  if (currentType.value === 'radialBar') {
-     return {
-      ...baseOptions,
-      chart: { type: 'radialBar' },
-      labels: skills.value.map(s => s.category),
-      plotOptions: {
-        radialBar: {
-          hollow: { size: '50%' },
-          track: {
-            background: isDark ? '#444' : '#e0e0e0',
-          },
-          dataLabels: {
-            name: { color: isDark ? '#fff' : '#333' },
-            value: { color: isDark ? '#e0cda9' : '#333' }
-          }
-        }
-      },
-      fill: { type: 'gradient' } // 徑向圖也適合漸層
-    };
-  }
-
-  return baseOptions;
-});
-
-// ------------------------------------
-// 數據獲取
-// ------------------------------------
 const fetchSkills = async () => {
-  loading.value = true;
   try {
-    const response = await axios.get('/api/skills');
-    skills.value = response.data;
+    const res = await axios.get('/api/skills');
+    await initChart(res.data); 
   } catch (error) {
-    console.error('無法取得技能數據：', error);
+    console.error('無法取得技能數據', error);
+    await initChart([]); 
   } finally {
     loading.value = false;
   }
@@ -210,148 +129,121 @@ const fetchSkills = async () => {
 
 onMounted(() => {
   fetchSkills();
+  if (chartContainer.value) {
+    resizeObserver = new ResizeObserver(() => {
+      if (myChart) myChart.resize();
+    });
+    resizeObserver.observe(chartContainer.value);
+  }
 });
 
-// 輔助函數：切換圖表
-const setType = (type: ChartType) => {
-  currentType.value = type;
-};
+onUnmounted(() => {
+  if (resizeObserver && chartContainer.value) {
+    resizeObserver.unobserve(chartContainer.value);
+    resizeObserver.disconnect();
+  }
+  if (myChart) myChart.dispose();
+});
+
+watch(() => props.isDark, () => { fetchSkills(); });
 </script>
 
 <template>
   <div class="chart-container">
-    <div class="header">
-      <h3 :style="{ color: textColor }">
-        <i class="fa-solid fa-chart-pie" style="margin-right: 8px;"></i> 技能分佈分析
-      </h3>
-      
-      <div class="controls">
-        <button 
-          @click="setType('donut')" 
-          :class="{ active: currentType === 'donut' }"
-          title="圓餅圖"
-        >
-          <span class="icon"><i class="fa-solid fa-circle-notch"></i></span> Donut
-        </button>
-        <button 
-          @click="setType('bar')" 
-          :class="{ active: currentType === 'bar' }"
-          title="堆疊長條圖"
-        >
-          <span class="icon"><i class="fa-solid fa-chart-bar"></i></span> Bar
-        </button>
-        <button 
-          @click="setType('radialBar')" 
-          :class="{ active: currentType === 'radialBar' }"
-          title="徑向圖"
-        >
-          <span class="icon"><i class="fa-solid fa-bullseye"></i></span> Radial
-        </button>
-      </div>
-    </div>
+    <h3>
+      <i class="fa-solid fa-chart-pie"></i> 技術棧佔比分析
+    </h3>
 
     <div v-if="loading" class="loading-state">
-      <p><i class="fa-solid fa-spinner fa-spin"></i> 正在載入數據...</p>
+      <i class="fa-solid fa-spinner fa-spin"></i> 正在分析專案數據...
     </div>
 
-    <div v-else class="chart-wrapper">
-      <VueApexCharts
-        :key="currentType"
-        :type="currentType === 'radialBar' ? 'radialBar' : (currentType === 'bar' ? 'bar' : 'donut')"
-        height="320"
-        :options="chartOptions"
-        :series="series"
-      />
-    </div>
+    <div ref="chartContainer" class="echarts-wrapper" :class="{ hidden: loading }"></div>
   </div>
 </template>
 
 <style scoped>
 .chart-container {
   width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
-  background: var(--card-bg, rgba(255, 255, 255, 0.1));
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.2));
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg, rgba(44, 44, 44, 0.7));
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
   border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  padding: 30px;
+  box-shadow: var(--card-shadow, 0 4px 6px rgba(0,0,0,0.3));
+  transition: all 0.4s ease;
+  box-sizing: border-box;
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-  gap: 1rem;
+.chart-container:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 242, 255, 0.15);
+  border-color: #007bff;
 }
 
-.header h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
+h3 {
+  margin-top: 0;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  display: inline-block;
+  color: var(--text-color);
+  font-size: 1.17em;
 }
 
-.controls {
-  display: flex;
-  background: rgba(0, 0, 0, 0.05);
-  padding: 4px;
-  border-radius: 8px;
-  gap: 4px;
+h3 i {
+  margin-right: 8px;
 }
 
-.controls button {
-  border: none;
-  background: transparent;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  color: var(--text-color, #888);
-  font-weight: 500;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.controls button .icon {
-  font-size: 0.9rem;
-}
-
-.controls button:hover {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.controls button.active {
-  background: var(--card-bg, #fff);
-  color: var(--primary-color, #333);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.chart-wrapper {
-  min-height: 320px;
+.echarts-wrapper {
   width: 100%;
-  display: flex;
-  justify-content: center;
+  flex-grow: 1;
+  min-height: 400px;
+  position: relative;
+  overflow: hidden;
 }
 
+.echarts-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 42%; 
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 230px; 
+  height: 230px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 242, 255, 0.1) 0%, transparent 70%);
+  border: 1px dashed rgba(0, 242, 255, 0.3);
+  animation: slow-spin 20s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes slow-spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+:deep(div[style*="z-index"]) {
+  z-index: 1 !important;
+}
+
+.hidden { display: none; }
 .loading-state {
-  min-height: 300px;
+  flex-grow: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #888;
-  gap: 10px;
+  font-family: 'Fira Code', monospace;
 }
 
-/* 深色模式適配 */
-:deep(.apexcharts-legend-text) {
-  font-family: inherit !important;
+@media (max-width: 768px) {
+  .echarts-wrapper::before {
+    width: 160px;
+    height: 160px;
+  }
 }
 </style>
