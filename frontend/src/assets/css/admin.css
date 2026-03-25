@@ -59,7 +59,8 @@
   align-items: center;
   padding: 12px;
   margin-bottom: 8px;
-  background: rgba(0,0,0,0.1);
+  background: var(--btn-bg);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   cursor: pointer;
   border: 1px solid transparent;
@@ -336,7 +337,7 @@
 
 .admin-tabs button.active {
   background: var(--link-active);
-  color: #000;
+  color: var(--bg-color); /* 讓文字顏色與背景色對比 */
   font-weight: bold;
 }
 
@@ -378,9 +379,9 @@
 .project-form-card input.title-input,
 .project-form-card textarea.project-desc-input {
   width: 100%;
-  background: #000 !important;
-  color: #fff !important;
-  border: 1px solid #444;
+  background: var(--card-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 12px 15px;
   font-size: 1rem;
@@ -416,25 +417,27 @@
 }
 
 .project-card-preview {
-  background: #0d1117;
+  background: var(--bg-color);
   padding: 30px;
   border-radius: 12px;
-  border: 1px solid #333;
+  border: 1px solid var(--border-color);
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden; 
   box-sizing: border-box;
+  transition: background 0.5s ease;
 }
 
 .project-card {
-  background: #1e1e1e;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 20px;
-  border: 1px solid #444;
-  color: #e0e0e0;
-  box-shadow: 0 4px 15px rgb(108 95 95 / 30%);
+  border: 1px solid var(--card-border);
+  color: var(--text-color);
+  box-shadow: var(--card-shadow);
   width: 100%;
+  transition: all 0.5s ease;
 }
 
 .card-header {
@@ -453,15 +456,15 @@
   padding-right: 15px;
 }
 
-.folder-icon {
-  color: #ffd700;
-  font-size: 1.2rem;
-  min-width: 24px;
-  text-align: right;
+.folder-icon { 
+  color: var(--link-active); 
+  font-size: 1.2rem; 
+  min-width: 24px; 
+  text-align: right; 
 }
 
 .desc {
-  color: #aaa;
+  color: var(--text-secondary);
   margin-bottom: 15px;
   font-size: 0.9rem;
   line-height: 1.5;
@@ -481,8 +484,9 @@
 
 .tech-tag {
   display: inline-block;
-  background: #333;
-  color: #ccc;
+  background: var(--btn-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
   padding: 4px 10px;
   border-radius: 20px;
   font-size: 0.75rem;
