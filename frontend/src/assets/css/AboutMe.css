@@ -1,0 +1,69 @@
+.about-section {
+  background-color: transparent; 
+  color: inherit;
+}
+
+/* --- 佈局核心 --- */
+.about-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 30px; /* 上下排的間距 */
+}
+
+/* --- 上半部：兩張卡片左右並排 --- */
+.info-cards-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* 切成左右各半 */
+  gap: 30px;
+  align-items: stretch; /* 讓兩張卡片高度自動對齊 */
+}
+
+/* --- 下半部：雷達圖 --- */
+.about-chart-row {
+  width: 100%;
+  opacity: 0;
+  transform: translateY(50px);
+  transition: all 0.8s ease;
+}
+
+.about-chart-row.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* --- 卡片共用樣式 --- */
+.card {
+  background-color: var(--card-bg, rgba(44, 44, 44, 0.7)); 
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+  color: var(--text-color, #e0e0e0);
+  box-shadow: var(--card-shadow, 0 4px 6px rgba(0,0,0,0.3));
+  padding: 30px;
+  border-radius: 16px;
+  opacity: 0;
+  transform: translateY(50px);
+  transition: all 0.8s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.card.visible { opacity: 1; transform: translateY(0); }
+.card h3 { margin-top: 0; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 20px; display: inline-block; }
+
+.cert-list { list-style: none; padding: 0; margin: 0; }
+.cert-list li { margin-bottom: 12px; padding-left: 20px; position: relative; line-height: 1.5; }
+.cert-list li::before { content: '✓'; color: #007bff; position: absolute; left: 0; font-weight: bold; }
+.highlight { color: #ffd700; font-weight: bold; } 
+
+:global(body.theme-light) .highlight { color: #d63384; }
+
+.section-header { text-align: center; margin-bottom: 50px; opacity: 0; transform: translateY(30px); transition: all 0.8s ease; }
+.section-header.visible { opacity: 1; transform: translateY(0); }
+h2 { font-size: 2.5rem; margin-bottom: 10px; color: inherit; }
+.subtitle { color: #888; font-size: 1.1rem; text-align:center !important; }
+
+/* --- RWD 手機版：螢幕太窄時全部變上下排 --- */
+@media (max-width: 960px) { 
+  .info-cards-row { 
+    grid-template-columns: 1fr;
+  } 
+}

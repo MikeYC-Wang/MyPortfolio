@@ -1,3 +1,4 @@
+// src/composables/useTheme.ts
 import { ref } from 'vue';
 
 // 建立一個全域的狀態，預設為 true (深色)
@@ -8,7 +9,9 @@ export function useTheme() {
   // 初始化：檢查目前的 DOM 狀態同步到變數
   const initTheme = () => {
     if (typeof document !== 'undefined') {
-      isDark.value = document.body.classList.contains('theme-dark');
+      // 如果 body 已經有 theme-light，就設為 false，否則預設 true
+      isDark.value = !document.body.classList.contains('theme-light');
+      updateDom(); // 確保一開始的 class 是正確掛上的
     }
   };
 
@@ -29,8 +32,10 @@ export function useTheme() {
     if (typeof document !== 'undefined') {
       if (isDark.value) {
         document.body.classList.add('theme-dark');
+        document.body.classList.remove('theme-light');
       } else {
-        document.body.classList.remove('theme-dark');
+        document.body.classList.add('theme-light');  
+        document.body.classList.remove('theme-dark'); 
       }
     }
   };

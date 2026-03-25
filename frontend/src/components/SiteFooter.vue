@@ -1,5 +1,5 @@
 <template>
-  <footer class="site-footer bg-dark">
+  <footer class="site-footer">
     <div class="footer-container">
       <div class="footer-brand">
         <h3 class="footer-logo">MikeYC Wang</h3>
@@ -36,18 +36,14 @@
 </template>
 
 <style scoped>
+/* 全面使用 var() 變數，自動支援深淺色切換 */
 .site-footer {
   width: 100%;
   padding: 30px 20px 20px;
-  background-color: #080b10;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  color: #aaa;
-}
-
-:global(.light-mode) .site-footer {
-  background-color: #f1f5f9;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-  color: #666;
+  background-color: var(--bg-secondary); 
+  border-top: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  transition: background-color 0.5s ease, border-color 0.5s ease, color 0.5s ease;
 }
 
 .footer-container {
@@ -58,33 +54,75 @@
   flex-wrap: wrap;
   gap: 50px;
   padding-bottom: 50px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-color);
+  transition: border-color 0.5s ease;
 }
 
-:global(.light-mode) .footer-container { border-bottom: 1px solid rgba(0, 0, 0, 0.1); }
-
 .footer-brand { flex: 2; min-width: 300px; }
-.footer-logo { font-size: 1.8rem; color: #d4b595; margin-bottom: 15px; font-family: monospace; }
-.footer-brand p { line-height: 1.6; font-size: 0.95rem; max-width: 400px; }
+
+.footer-logo { 
+  font-size: 1.8rem; 
+  color: var(--link-active); 
+  margin-bottom: 15px; 
+  font-family: monospace; 
+  transition: color 0.5s ease; 
+}
+
+.footer-brand p { 
+  line-height: 1.6; 
+  font-size: 0.95rem; 
+  max-width: 400px; 
+}
 
 .footer-links, .footer-social { flex: 1; min-width: 150px; }
-.footer-links h4, .footer-social h4 { color: #fff; font-size: 1.1rem; margin-bottom: 20px; letter-spacing: 1px; }
 
-:global(.light-mode) .footer-links h4, 
-:global(.light-mode) .footer-social h4 { color: #333; }
+/* 標題改成 var(--text-color)，這樣亮色時會變深咖啡，深色時會變白 */
+.footer-links h4, .footer-social h4 { 
+  color: var(--text-color); 
+  font-size: 1.1rem; 
+  margin-bottom: 20px; 
+  letter-spacing: 1px; 
+  transition: color 0.5s ease; 
+}
 
 .link-grid, .social-links { display: flex; flex-direction: column; gap: 12px; }
-.link-grid a, .social-links a { color: #aaa; text-decoration: none; font-size: 0.95rem; transition: all 0.3s ease; display: inline-block; width: fit-content; }
 
-:global(.light-mode) .link-grid a, 
-:global(.light-mode) .social-links a { color: #666; }
+.link-grid a, .social-links a { 
+  color: var(--text-secondary); 
+  text-decoration: none; 
+  font-size: 0.95rem; 
+  transition: all 0.3s ease; 
+  display: inline-block; 
+  width: fit-content; 
+}
 
-.link-grid a:hover, .social-links a:hover { color: #d4b595; transform: translateX(5px); }
+.link-grid a:hover, .social-links a:hover { 
+  color: var(--link-active); 
+  transform: translateX(5px); 
+}
 
-.link-grid a i, .social-links a i { margin-right: 8px; font-size: 1.1rem; width: 20px; text-align: center; }
+.link-grid a i, .social-links a i { 
+  margin-right: 8px; 
+  font-size: 1.1rem; 
+  width: 20px; 
+  text-align: center; 
+}
 
-.footer-bottom { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding-top: 20px; font-size: 0.85rem; }
-.build-info { font-family: monospace; color: #555; }
+.footer-bottom { 
+  max-width: 1400px; 
+  margin: 0 auto; 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  padding-top: 20px; 
+  font-size: 0.85rem; 
+}
+
+.build-info { 
+  font-family: monospace; 
+  color: var(--text-secondary); 
+  transition: color 0.5s ease; 
+}
 
 @media (max-width: 768px) {
   .footer-container { flex-direction: column; gap: 40px; }
