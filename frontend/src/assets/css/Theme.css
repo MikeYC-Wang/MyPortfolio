@@ -1,66 +1,96 @@
-/* src/assets/main.css */
+/* src/assets/css/Theme.css */
 
-/* --- 🎨 全域配色變數 --- */
+/* --- 🎨 全域配色變數 (Base Defaults / 預設為深色風格) --- */
 :root {
-  /* 基礎預設值 */
+  /* 奶茶色系主調 */
+  --milk-tea: #e6ccb2;
+  --milk-tea-dark: #d4b595;
+
+  /* 基礎背景與文字 */
+  --bg-color: #121212;
+  --bg-secondary: #1e1e1e;
   --text-color: #ffffff;
-  --link-color: #ccc;
-  --link-active: #e0cda9;
-  --nav-bg: rgba(0, 0, 0, 0.5);
+  --text-secondary: #a0a0a0;
+  
+  /* 連結與導覽列 */
+  --link-color: #cccccc;
+  --link-active: var(--milk-tea);
+  --nav-bg: rgba(0, 0, 0, 0.7);
+  
+  /* 邊框與按鈕 */
   --border-color: rgba(255, 255, 255, 0.1);
-  --gradient-text: linear-gradient(135deg, #ffffff 0%, #e0cda9 100%);
   --btn-bg: rgba(255, 255, 255, 0.1);
   --btn-hover: rgba(255, 255, 255, 0.2);
+  
+  /* 卡片與陰影 */
   --card-bg: rgba(44, 44, 44, 0.7);
   --card-border: rgba(255, 255, 255, 0.1);
   --card-shadow: 0 4px 6px rgba(0,0,0,0.3);
   --card-hover-shadow: 0 8px 20px rgba(0,0,0,0.4);
-  --milk-tea: #e6ccb2;
-  --milk-tea-dark: #d4b595;
+  
+  /* 特效 */
+  --gradient-text: linear-gradient(135deg, #ffffff 0%, var(--milk-tea) 100%);
 }
 
-/* 🌑 深色模式 */
+/* 🌑 深色模式 (Dark Mode) */
 body.theme-dark {
+  --bg-color: #1a1a1a;
+  --bg-secondary: #242424;
   --text-color: #f0f0f0;
+  --text-secondary: #b3b3b3;
+  
   --link-color: #bbbbbb;
-  --link-active: #e0cda9;
-  --nav-bg: rgba(18, 18, 18, 0.85); /*稍微加深一點，避免透過背景太雜*/
+  --link-active: var(--milk-tea);
+  --nav-bg: rgba(26, 26, 26, 0.85); /* 稍微加深一點，避免透過背景太雜 */
+  
   --border-color: rgba(255, 255, 255, 0.1);
   --btn-bg: rgba(255, 255, 255, 0.05);
   --btn-hover: rgba(255, 255, 255, 0.15);
-  --gradient-text: linear-gradient(135deg, #ffffff 30%, #e0cda9 100%);
   
   --card-bg: rgba(30, 30, 30, 0.8);
   --card-border: rgba(255, 255, 255, 0.1);
   --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
   --card-hover-shadow: 0 8px 25px rgba(224, 205, 169, 0.1);
   
-  background-color: #1a1a1a;
+  --gradient-text: linear-gradient(135deg, #ffffff 30%, var(--milk-tea) 100%);
 }
 
-/* ☀️ 亮色模式 */
+/* ☀️ 亮色模式 (Light Mode) - 溫暖奶茶風 */
 body.theme-light {
-  --text-color: #5d4037;
+  /* 背景改為暖白/奶茶底色 */
+  --bg-color: #f5f0e6; 
+  --bg-secondary: #ffffff;
+  
+  /* 文字改為深咖啡色，避免純黑顯得太銳利 */
+  --text-color: #4e342e; 
+  --text-secondary: #795548;
+  
+  /* 連結與導覽列 */
   --link-color: #8d6e63;
   --link-active: #5d4037;
-  --nav-bg: rgba(255, 255, 255, 0.85);
+  --nav-bg: rgba(255, 255, 255, 0.9);
+  
+  /* 邊框與按鈕 */
   --border-color: rgba(141, 110, 99, 0.2);
   --btn-bg: #fdfbf7;
-  --btn-hover: rgba(141, 110, 99, 0.1);
-  --gradient-text: linear-gradient(135deg, #5d4037 0%, #a1887f 100%);
+  --btn-hover: rgba(141, 110, 99, 0.15);
   
-  --card-bg: rgba(255, 255, 255, 0.8);
+  /* 卡片與陰影 (使用帶有暖色調的陰影) */
+  --card-bg: rgba(255, 255, 255, 0.85);
   --card-border: rgba(141, 110, 99, 0.2);
-  --card-shadow: 0 6px 15px rgba(93, 64, 55, 0.1);
-  --card-hover-shadow: 0 10px 25px rgba(93, 64, 55, 0.2);
+  --card-shadow: 0 6px 15px rgba(93, 64, 55, 0.08);
+  --card-hover-shadow: 0 10px 25px rgba(93, 64, 55, 0.18);
   
-  background-color: #f5f0e6; /* 奶茶色背景 */
+  /* 特效 */
+  --gradient-text: linear-gradient(135deg, #5d4037 0%, #a1887f 100%);
 }
 
+/* --- 全局基礎設定 --- */
 body {
   margin: 0;
   font-family: 'Helvetica Neue', Arial, sans-serif;
-  color: var(--text-color);
+  background-color: var(--bg-color); /* 統一使用變數 */
+  color: var(--text-color);          /* 統一使用變數 */
   transition: background-color 0.5s ease, color 0.5s ease;
   overflow-x: hidden;
 }
@@ -68,6 +98,17 @@ body {
 /* 確保全域的按鈕樣式一致 */
 button {
   font-family: inherit;
+  color: var(--text-color); /* 讓按鈕文字也跟隨主題 */
+}
+
+/* 確保全局連結跟隨主題 */
+a {
+  color: var(--link-color);
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: var(--link-active);
 }
 
 /* --- 隱藏桌機版的原生滑鼠游標 --- */
