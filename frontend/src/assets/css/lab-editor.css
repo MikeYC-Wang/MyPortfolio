@@ -106,10 +106,17 @@
   padding: 8px 15px;
   font-size: 0.8rem;
   font-weight: bold;
-  background: #252526;
+  background: #252526; /* 預設深色模式 */
   color: #aaa;
-  flex-shrink: 0; /* 防止 Header 被壓縮 */
+  flex-shrink: 0;
+  transition: background 0.5s ease; /* 加上平滑漸變 */
 }
+
+/* 亮色模式：焦糖奶茶色 */
+body.theme-light .section-header {
+  background: #e8dcca;
+}
+
 .html-label { border-top: 3px solid #e34c26; }
 .css-label { border-top: 3px solid #264de4; }
 .js-label { border-top: 3px solid #f0db4f; }
