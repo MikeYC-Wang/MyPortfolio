@@ -32,7 +32,7 @@ let screenTexture: THREE.CanvasTexture | null = null;
 let floatingElements: { sprite: THREE.Sprite; velocity: THREE.Vector3 }[] = [];
 let earthMesh: THREE.Points | null = null;
 let extraZoomDistance = 0;
-const MAX_EXTRA_ZOOM = 10;
+const MAX_EXTRA_ZOOM = 0;
 let BASE_CAMERA_Z = window.innerWidth < 768 ? 10 : 6;
 
 // 互動與模型變數

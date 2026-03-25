@@ -58,7 +58,7 @@ const initChart = async (data: any[]) => {
     },
     legend: {
       type: 'scroll', 
-      bottom: '2%',
+      bottom: '0',
       left: 'center',
       textStyle: { 
         color: props.isDark ? '#e0cda9' : '#5d4037',
@@ -69,7 +69,7 @@ const initChart = async (data: any[]) => {
       itemWidth: 14,
       itemHeight: 14,
       icon: 'circle',
-      pageIconColor: '#007bff', // 翻頁按鈕的顏色
+      pageIconColor: '#007bff',
       pageIconInactiveColor: '#555',
       pageTextStyle: { color: props.isDark ? '#fff' : '#333' }
     },
@@ -200,7 +200,7 @@ h3 i {
 .echarts-wrapper {
   width: 100%;
   flex-grow: 1;
-  min-height: 400px;
+  min-height: 500px;
   position: relative;
   overflow: hidden;
 }
