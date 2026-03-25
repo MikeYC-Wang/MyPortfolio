@@ -60,6 +60,7 @@ body.theme-light {
   /* 背景改為暖白/奶茶底色 */
   --bg-color: #f5f0e6; 
   --bg-secondary: #ffffff;
+  --taro-purple:#9d8189;
   
   /* 文字改為深咖啡色，避免純黑顯得太銳利 */
   --text-color: #4e342e; 

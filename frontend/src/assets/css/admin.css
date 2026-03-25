@@ -447,7 +447,7 @@
 /* 解決標題與 Icon 擠壓問題 */
 .card-header h3 {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1rem;
   color: #4dabf7;
   flex: 1;
   padding-right: 15px;

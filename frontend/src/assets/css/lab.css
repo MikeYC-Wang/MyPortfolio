@@ -94,15 +94,20 @@
   border-color: var(--milk-tea); /* Hover 時邊框變奶茶色 */
 }
 
-/* 卡片頂部 (模擬瀏覽器視窗) */
+/* 卡片頂部 */
 .card-header {
-  background: #252526; /* 這裡維持深色模擬 IDE */
+  background: #252526;
   padding: 10px 15px;
   display: flex;
   align-items: center;
   border-bottom: 1px solid #333;
 }
 
+body.theme-light .card-header {
+  background: #fdfbf7;
+  border-bottom: none;
+}
+  
 /* IDE 紅黃綠燈 */
 .dots {
   display: flex;

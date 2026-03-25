@@ -226,7 +226,9 @@ h1 { font-size: 2.5rem; margin-bottom: 1rem; color: var(--text-color); }
   overflow-x: auto;
   line-height: 1.6;
 }
-
+:deep(.code-block-wrapper pre::-webkit-scrollbar) {
+  height: 8px; /* 捲軸高度 */
+}
 :deep(.code-block-wrapper code) {
   padding: 0 !important;
   margin: 0 !important;

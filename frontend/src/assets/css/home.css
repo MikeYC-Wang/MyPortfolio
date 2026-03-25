@@ -80,11 +80,24 @@
   cursor: pointer;
 }
 
-.project-card:hover { transform: translateY(-5px); box-shadow: var(--card-hover-shadow); border-color: var(--link-active); }
+/* 亮色模式微調：確保卡片是純白，並加強陰影深度 */
+body.theme-light .project-card {
+  background: #ffffff;
+  border-color: rgba(141, 110, 99, 0.15);
+  box-shadow: 0 4px 15px rgba(93, 64, 55, 0.05);
+}
+
+.project-card:hover { transform: translateY(-8px); box-shadow: var(--card-hover-shadow); border-color: var(--link-active); }
+
+/* 亮色模式 Hover 強化：讓懸浮感更明顯 */
+body.theme-light .project-card:hover {
+  box-shadow: 0 15px 35px rgba(93, 64, 55, 0.12);
+  border-color: var(--link-active);
+}
 
 /* === 卡片內容 === */
 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.card-header h3 { margin: 0; font-size: 1.2rem; color: var(--link-active); flex: 1; padding-right: 15px; word-break: break-all; transition: color 0.3s ease; }
+.card-header h3 { margin: 0; font-size: 1rem; color: var(--link-active); flex: 1; padding-right: 15px; word-break: break-all; transition: color 0.3s ease; }
 
 .folder-icon { color: var(--link-active); font-size: 1.2rem; min-width: 24px; text-align: right; }
 
