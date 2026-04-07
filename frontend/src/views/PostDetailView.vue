@@ -115,7 +115,7 @@ onMounted(async () => {
         
         <img 
           v-if="post.cover_image" 
-          :src="post.cover_image.startsWith('http') ? post.cover_image : `http://127.0.0.1:8000${post.cover_image}`" 
+          :src="post.cover_image.startsWith('http') ? post.cover_image : `${import.meta.env.VITE_API_BASE_URL || ''}${post.cover_image}`"
           class="main-cover" 
         />
 

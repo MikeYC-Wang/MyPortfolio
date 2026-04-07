@@ -26,7 +26,7 @@ const getImageUrl = (path: string) => {
   // 如果已經是完整的網址 (http開頭)，就直接回傳
   if (path.startsWith('http')) return path;
   // 否則補上後端網址
-  return `http://127.0.0.1:8000${path}`;
+  return `${import.meta.env.VITE_API_BASE_URL || ''}${path}`;
 };
 
 onMounted(async () => {

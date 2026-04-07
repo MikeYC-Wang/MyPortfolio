@@ -40,6 +40,10 @@ if not SECRET_KEY:
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
 
+# AI 服務金鑰 (選擇性，缺少時對應端點回傳 503)
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
 
@@ -199,6 +203,23 @@ class TokenPair(BaseModel):
 
 class RefreshRequest(BaseModel):
     refresh_token: str
+
+class AIAssistRequest(BaseModel):
+    text: str
+    action: str  # "polish" | "translate_en" | "summarize" | "title_suggestions"
+
+class AIAssistResponse(BaseModel):
+    result: str
+
+class AIChatMessage(BaseModel):
+    role: str  # "user" | "assistant"
+    content: str
+
+class AIChatRequest(BaseModel):
+    messages: List[AIChatMessage]
+
+class AIChatResponse(BaseModel):
+    reply: str
 
 # ==========================================
 # 4. FastAPI 主程式與工具函式
@@ -726,6 +747,109 @@ def get_api_calls_stats(db: Session = Depends(get_db)):
     # 4. 轉換為前端 ECharts 需要的陣列格式
     data = [{"date": k, "count": v} for k, v in stats.items()]
     return data
+
+# ==========================================
+# AI 整合 (Claude + Gemini)
+# ==========================================
+
+AI_ASSIST_ACTIONS = {
+    "polish": "你是專業中文編輯。請潤飾以下文章內容，保留原意，改善語句通順、用詞精準。直接回傳修改後的文章，不要解釋。",
+    "translate_en": "Translate the following Chinese text to natural, professional English. Output only the translation, no explanation.",
+    "summarize": "請為以下文章寫一段 100 字以內的繁體中文摘要。直接輸出摘要，不要前綴。",
+    "title_suggestions": "請為以下文章內容提供 5 個吸引人的繁體中文標題建議，每行一個，不要編號。",
+}
+
+@app.post("/api/ai/assist", response_model=AIAssistResponse)
+@limiter.limit("20/minute")
+def ai_assist(request: Request, body: AIAssistRequest, current_admin: AdminModel = Depends(get_current_admin), db: Session = Depends(get_db)):
+    if body.action not in AI_ASSIST_ACTIONS:
+        raise HTTPException(status_code=400, detail="Invalid action")
+    if not body.text or not body.text.strip():
+        raise HTTPException(status_code=400, detail="Text is required")
+    if len(body.text) > 8000:
+        raise HTTPException(status_code=400, detail="Text too long (max 8000 chars)")
+    if not ANTHROPIC_API_KEY:
+        raise HTTPException(status_code=503, detail="AI service not configured (missing ANTHROPIC_API_KEY)")
+
+    try:
+        from anthropic import Anthropic
+    except ImportError:
+        raise HTTPException(status_code=503, detail="AI service unavailable (anthropic SDK not installed)")
+
+    system_prompt = AI_ASSIST_ACTIONS[body.action]
+    try:
+        client = Anthropic(api_key=ANTHROPIC_API_KEY)
+        response = client.messages.create(
+            model="claude-haiku-4-5",
+            max_tokens=2000,
+            system=system_prompt,
+            messages=[{"role": "user", "content": body.text}],
+        )
+        result_text = response.content[0].text
+    except Exception as e:
+        print(f"Anthropic API error: {e}")
+        raise HTTPException(status_code=502, detail="AI service temporarily unavailable")
+
+    return {"result": result_text}
+
+
+@app.post("/api/ai/chat", response_model=AIChatResponse)
+@limiter.limit("10/minute")
+def ai_chat(request: Request, body: AIChatRequest, db: Session = Depends(get_db)):
+    if not body.messages or len(body.messages) < 1 or len(body.messages) > 20:
+        raise HTTPException(status_code=400, detail="messages length must be 1-20")
+    total = 0
+    for m in body.messages:
+        if len(m.content) > 1000:
+            raise HTTPException(status_code=400, detail="message content too long (max 1000 chars)")
+        total += len(m.content)
+    if total > 8000:
+        raise HTTPException(status_code=400, detail="total context too long (max 8000 chars)")
+    if body.messages[-1].role != "user":
+        raise HTTPException(status_code=400, detail="last message must be from user")
+
+    if not GEMINI_API_KEY:
+        raise HTTPException(status_code=503, detail="AI service not configured (missing GEMINI_API_KEY)")
+
+    # 抓取網站內容作為系統提示
+    projects = db.query(ProjectModel).filter(ProjectModel.is_published == True).all()
+    posts = db.query(PostModel).filter(PostModel.is_published == True).limit(20).all()
+
+    project_lines = "\n".join(f"- {p.title}: {p.description or ''}" for p in projects) or "（暫無資料）"
+    post_lines = "\n".join(f"- {p.title}: {(p.content or '')[:200]}" for p in posts) or "（暫無資料）"
+
+    system_prompt = (
+        "你是 Mike 的個人網站客服機器人。回答訪客關於 Mike 和他的作品的問題。請使用繁體中文，語氣親切專業。\n\n"
+        f"Mike 的專案：\n{project_lines}\n\n"
+        f"Mike 的部落格文章：\n{post_lines}\n\n"
+        "如果訪客問與 Mike 或本站無關的問題，禮貌地將話題引導回 Mike 的作品。不要編造資訊。"
+        "如果不知道答案，請說「這個我不太清楚，建議直接聯絡 Mike」。"
+    )
+
+    try:
+        from google import genai
+    except ImportError:
+        raise HTTPException(status_code=503, detail="AI service unavailable (google-genai SDK not installed)")
+
+    try:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        history = [
+            {"role": "user" if m.role == "user" else "model", "parts": [{"text": m.content}]}
+            for m in body.messages[:-1]
+        ]
+        chat = client.chats.create(
+            model="gemini-2.5-flash",
+            config={"system_instruction": system_prompt},
+            history=history,
+        )
+        response = chat.send_message(body.messages[-1].content)
+        reply_text = response.text
+    except Exception as e:
+        print(f"Gemini API error: {e}")
+        raise HTTPException(status_code=502, detail="AI service temporarily unavailable")
+
+    return {"reply": reply_text}
+
 
 # ==========================================
 # 流量監控攔截器 (Middleware)

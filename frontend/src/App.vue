@@ -1,12 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { RouterLink, RouterView } from 'vue-router';
+import { ref, onMounted, computed } from 'vue';
+import { RouterLink, RouterView, useRoute } from 'vue-router';
 import Background3D from '@/components/Background3D.vue';
 import HackerIntro from '@/components/HackerIntro.vue';
 import CustomCursor from '@/components/CustomCursor.vue';
 import { useTheme } from '@/composables/useTheme';
 import "./assets/css/Theme.css";
 import BackToTop from '@/components/BackToTop.vue';
+import ChatWidget from '@/components/ChatWidget.vue';
+
+const route = useRoute();
+const showChatWidget = computed(() => {
+  const p = (route.path || '').toLowerCase();
+  return !p.includes('/admin') && !p.includes('/login') && !p.includes('/dashboard');
+});
 
 // 使用共用的主題狀態
 const { isDark, toggleTheme, initTheme } = useTheme();
@@ -106,6 +113,7 @@ onMounted(() => {
       </router-view>
     </main>
     <BackToTop />
+    <ChatWidget v-if="showChatWidget" />
   </div>
 </template>
 
