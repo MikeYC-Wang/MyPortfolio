@@ -68,7 +68,7 @@ const goHome = () => {
 /* 淺色模式支援 */
 :global(body.theme-light) .glitch::before,
 :global(body.theme-light) .glitch::after {
-  background: #f5f0e6;
+  background: #faf7f2;
 }
 
 .glitch::before {

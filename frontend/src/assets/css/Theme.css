@@ -55,35 +55,38 @@ body.theme-dark {
   --gradient-text: linear-gradient(135deg, #ffffff 30%, var(--milk-tea) 100%);
 }
 
-/* ☀️ 亮色模式 (Light Mode) - 溫暖奶茶風 */
+/* ☀️ 亮色模式 (Light Mode) - Editorial Paper × Milk Tea */
 body.theme-light {
-  /* 背景改為暖白/奶茶底色 */
-  --bg-color: #f5f0e6; 
+  /* 奶茶色作為點綴，調整以在亮底上仍有存在感 */
+  --milk-tea: #c8956d;
+  --milk-tea-dark: #a06b3f;
+
+  /* 背景：溫暖紙張色，避免冷白 */
+  --bg-color: #faf7f2;
   --bg-secondary: #ffffff;
-  --taro-purple:#9d8189;
-  
-  /* 文字改為深咖啡色，避免純黑顯得太銳利 */
-  --text-color: #4e342e; 
-  --text-secondary: #795548;
-  
-  /* 連結與導覽列 */
-  --link-color: #8d6e63;
-  --link-active: #5d4037;
-  --nav-bg: rgba(255, 255, 255, 0.9);
-  
+
+  /* 文字：濃縮咖啡色，極高對比但不刺眼 */
+  --text-color: #2a1f17;
+  --text-secondary: #6b5847;
+
+  /* 連結：焦糖色，懸停加深 */
+  --link-color: #8a5a3b;
+  --link-active: #5b3a22;
+  --nav-bg: rgba(250, 247, 242, 0.85);
+
   /* 邊框與按鈕 */
-  --border-color: rgba(141, 110, 99, 0.2);
-  --btn-bg: #fdfbf7;
-  --btn-hover: rgba(141, 110, 99, 0.15);
-  
-  /* 卡片與陰影 (使用帶有暖色調的陰影) */
-  --card-bg: rgba(255, 255, 255, 0.85);
-  --card-border: rgba(141, 110, 99, 0.2);
-  --card-shadow: 0 6px 15px rgba(93, 64, 55, 0.08);
-  --card-hover-shadow: 0 10px 25px rgba(93, 64, 55, 0.18);
-  
-  /* 特效 */
-  --gradient-text: linear-gradient(135deg, #5d4037 0%, #a1887f 100%);
+  --border-color: rgba(42, 31, 23, 0.12);
+  --btn-bg: #f1ebe1;
+  --btn-hover: rgba(160, 107, 63, 0.18);
+
+  /* 卡片與陰影 (暖色調陰影，柔和但有層次) */
+  --card-bg: #ffffff;
+  --card-border: rgba(42, 31, 23, 0.10);
+  --card-shadow: 0 4px 14px rgba(91, 58, 34, 0.06);
+  --card-hover-shadow: 0 14px 32px rgba(91, 58, 34, 0.14);
+
+  /* 標題漸層：奢華咖啡 → 焦糖 */
+  --gradient-text: linear-gradient(135deg, #2a1f17 0%, #a06b3f 100%);
 }
 
 /* --- 全局基礎設定 --- */

@@ -70,7 +70,7 @@
 .cert-list li::before { content: '✓'; color: #007bff; position: absolute; left: 0; font-weight: bold; }
 .highlight { color: #ffd700; font-weight: bold; } 
 
-:global(body.theme-light) .highlight { color: #d63384; }
+:global(body.theme-light) .highlight { color: #a06b3f; }
 
 .section-header { text-align: center; margin-bottom: 50px; opacity: 0; transform: translateY(30px); transition: all 0.8s ease; }
 .section-header.visible { opacity: 1; transform: translateY(0); }
