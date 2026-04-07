@@ -9,10 +9,15 @@ import requests
 import random
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+import re
 from fastapi import FastAPI, Depends, HTTPException, File, UploadFile, Request, status
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, TIMESTAMP
@@ -32,7 +37,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY environment variable is required")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 15
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
@@ -59,6 +64,7 @@ class ProjectModel(Base):
     description = Column(Text)
     tech_stack = Column(String)
     content = Column(Text, nullable=True)
+    is_published = Column(Boolean, default=True)
 
 class CodeSnippetModel(Base):
     __tablename__ = "code_snippets"
@@ -120,6 +126,7 @@ class ProjectSchema(BaseModel):
     description: Optional[str] = None
     tech_stack: Optional[str] = None
     content: Optional[str] = None
+    is_published: Optional[bool] = True
     class Config:
         from_attributes = True
 
@@ -128,6 +135,7 @@ class ProjectCreate(BaseModel):
     description: Optional[str] = None
     tech_stack: Optional[str] = None
     content: Optional[str] = None
+    is_published: bool = True
 
 class CodeSnippetCreate(BaseModel):
     title: str
@@ -192,13 +200,37 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 UPLOAD_DIR = "static/uploads"
 if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
+
+UPLOAD_MEDIA_TYPES = {
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "png": "image/png",
+    "gif": "image/gif",
+    "webp": "image/webp",
+}
+_UPLOAD_FILENAME_RE = re.compile(r"^[a-f0-9-]+\.(jpg|jpeg|png|gif|webp)$", re.IGNORECASE)
+
+@app.get("/static/uploads/{filename}")
+def serve_upload(filename: str):
+    if not _UPLOAD_FILENAME_RE.match(filename):
+        raise HTTPException(status_code=404, detail="Not found")
+    file_path = os.path.join(UPLOAD_DIR, filename)
+    if not os.path.isfile(file_path):
+        raise HTTPException(status_code=404, detail="Not found")
+    ext = filename.rsplit(".", 1)[1].lower()
+    media_type = UPLOAD_MEDIA_TYPES.get(ext, "application/octet-stream")
+    return FileResponse(
+        file_path,
+        media_type=media_type,
+        headers={"Content-Disposition": "inline"},
+    )
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -208,6 +240,33 @@ def get_db():
         yield db
     finally:
         db.close()
+
+def get_client_ip(request: Request) -> str:
+    xff = request.headers.get("x-forwarded-for")
+    if xff:
+        return xff.split(",")[0].strip()
+    return request.client.host
+
+# ==========================================
+# Rate limiter & global exception handler
+# ==========================================
+limiter = Limiter(key_func=lambda request: get_client_ip(request))
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    print(f"Unhandled exception on {request.url.path}: {exc}")
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
+def cleanup_old_api_logs(db):
+    cutoff = datetime.datetime.now() - datetime.timedelta(days=30)
+    try:
+        db.query(ApiLogModel).filter(ApiLogModel.timestamp < cutoff).delete(synchronize_session=False)
+        db.commit()
+    except Exception as e:
+        print(f"清理舊 API 日誌失敗: {e}")
+        db.rollback()
 
 def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> AdminModel:
     credentials_exception = HTTPException(
@@ -235,7 +294,7 @@ def get_password_hash(password):
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -269,11 +328,12 @@ def read_root():
     return {"message": "Portfolio API V3.0 Running"}
 
 @app.post("/api/login", response_model=Token)
+@limiter.limit("5/minute")
 def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    client_ip = request.client.host
+    client_ip = get_client_ip(request)
 
     # 3 分鐘內失敗超過 3 次即鎖定 3 分鐘
-    three_mins_ago = datetime.datetime.utcnow() - datetime.timedelta(minutes=3)
+    three_mins_ago = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=3)).replace(tzinfo=None)
     failed_attempts = db.query(LoginLogModel).filter(
         LoginLogModel.ip_address == client_ip,
         LoginLogModel.is_success == False,
@@ -315,7 +375,8 @@ ALLOWED_UPLOAD_CONTENT_TYPES = {"image/jpeg", "image/png", "image/gif", "image/w
 MAX_UPLOAD_SIZE = 5 * 1024 * 1024
 
 @app.post("/api/upload")
-async def upload_image(file: UploadFile = File(...), current_admin: AdminModel = Depends(get_current_admin)):
+@limiter.limit("10/minute")
+async def upload_image(request: Request, file: UploadFile = File(...), current_admin: AdminModel = Depends(get_current_admin)):
     if not file.filename:
         raise HTTPException(status_code=400, detail="Filename is required")
     _, ext = os.path.splitext(file.filename)
@@ -354,7 +415,7 @@ async def upload_image(file: UploadFile = File(...), current_admin: AdminModel =
 # --- Projects ---
 @app.get("/api/projects", response_model=List[ProjectSchema])
 def get_projects(db: Session = Depends(get_db)):
-    return db.query(ProjectModel).order_by(ProjectModel.id.asc()).all()
+    return db.query(ProjectModel).filter(ProjectModel.is_published == True).order_by(ProjectModel.id.asc()).all()
 
 # --- Code Snippets (Playground) ---
 @app.get("/api/snippets", response_model=List[CodeSnippetSchema])
@@ -425,11 +486,11 @@ def get_skills(db: Session = Depends(get_db)):
 # --- Posts (Blog) ---
 @app.get("/api/posts", response_model=List[PostSchema])
 def get_posts(db: Session = Depends(get_db)):
-    return db.query(PostModel).order_by(PostModel.id.asc()).all()
+    return db.query(PostModel).filter(PostModel.is_published == True).order_by(PostModel.id.asc()).all()
 
 @app.get("/api/posts/{post_id}", response_model=PostSchema)
 def get_post(post_id: int, db: Session = Depends(get_db)):
-    post = db.query(PostModel).filter(PostModel.id == post_id).first()
+    post = db.query(PostModel).filter(PostModel.id == post_id, PostModel.is_published == True).first()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     return post
@@ -486,7 +547,8 @@ def update_project(project_id: int, project: ProjectCreate, db: Session = Depend
     db_project.description = project.description
     db_project.tech_stack = project.tech_stack
     db_project.content = project.content
-    
+    db_project.is_published = project.is_published
+
     db.commit()
     return {"message": "Project updated"}
 
@@ -504,7 +566,8 @@ def delete_project(project_id: int, db: Session = Depends(get_db), current_admin
 
 # 系統數據監控
 @app.get("/api/system_status")
-def get_system_status():
+@limiter.limit("30/minute")
+def get_system_status(request: Request):
     gpu_usage = 0.0
     
     try:
@@ -524,7 +587,8 @@ def get_system_status():
 # GitHub 真實貢獻度抓取 API
 # ==========================================
 @app.get("/api/github_contributions")
-def get_github_contributions():
+@limiter.limit("10/minute")
+def get_github_contributions(request: Request):
     username = "MikeYC-Wang"
     url = f"https://github.com/users/{username}/contributions"
     
@@ -603,18 +667,31 @@ async def log_api_requests(request: Request, call_next):
     
     # 我們只紀錄 /api/ 開頭的真實資料請求，排除靜態檔案或圖片下載，以免塞爆資料庫
     if request.url.path.startswith("/api/"):
+        client_ip = get_client_ip(request)
         db = SessionLocal()
         try:
             log = ApiLogModel(
                 path=request.url.path,
                 method=request.method,
-                client_ip=request.client.host
+                client_ip=client_ip
             )
             db.add(log)
             db.commit()
+            if random.random() < 0.001:
+                cleanup_old_api_logs(db)
         except Exception as e:
             print(f"寫入 API 流量日誌失敗: {e}")
         finally:
             db.close()
-            
+
+    return response
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
     return response
