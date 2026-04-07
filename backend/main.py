@@ -28,7 +28,9 @@ from collections import Counter
 # ==========================================
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY", "default_secret_key_change_me")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY environment variable is required")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -38,7 +40,9 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
 # ==========================================
 # 1. 資料庫連線設定
 # ==========================================
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:Day25143@localhost:5432/portfolio_db")
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+if not SQLALCHEMY_DATABASE_URL:
+    raise RuntimeError("DATABASE_URL environment variable is required")
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -205,6 +209,24 @@ def get_db():
     finally:
         db.close()
 
+def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> AdminModel:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: Optional[str] = payload.get("sub")
+        if not username:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    admin = db.query(AdminModel).filter(AdminModel.username == username).first()
+    if admin is None:
+        raise credentials_exception
+    return admin
+
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
@@ -288,13 +310,45 @@ def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestFor
     access_token = create_access_token(data={"sub": admin.username})
     return {"access_token": access_token, "token_type": "bearer"}
 
+ALLOWED_UPLOAD_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp"}
+ALLOWED_UPLOAD_CONTENT_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+MAX_UPLOAD_SIZE = 5 * 1024 * 1024
+
 @app.post("/api/upload")
-async def upload_image(file: UploadFile = File(...)):
-    file_ext = file.filename.split(".")[-1]
+async def upload_image(file: UploadFile = File(...), current_admin: AdminModel = Depends(get_current_admin)):
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Filename is required")
+    _, ext = os.path.splitext(file.filename)
+    if not ext:
+        raise HTTPException(status_code=400, detail="File must have an extension")
+    file_ext = ext.lstrip(".").lower()
+    if file_ext not in ALLOWED_UPLOAD_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="File extension not allowed")
+    if file.content_type not in ALLOWED_UPLOAD_CONTENT_TYPES:
+        raise HTTPException(status_code=400, detail="Content type not allowed")
+
     file_name = f"{uuid.uuid4()}.{file_ext}"
     file_path = f"{UPLOAD_DIR}/{file_name}"
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    size = 0
+    try:
+        with open(file_path, "wb") as buffer:
+            while True:
+                chunk = await file.read(1024 * 1024)
+                if not chunk:
+                    break
+                size += len(chunk)
+                if size > MAX_UPLOAD_SIZE:
+                    buffer.close()
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                    raise HTTPException(status_code=413, detail="File too large (max 5 MB)")
+                buffer.write(chunk)
+    except HTTPException:
+        raise
+    except Exception:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        raise
     return {"url": f"/static/uploads/{file_name}"}
 
 # --- Projects ---
@@ -308,7 +362,7 @@ def get_snippets(db: Session = Depends(get_db)):
     return db.query(CodeSnippetModel).filter(CodeSnippetModel.is_published == True).order_by(CodeSnippetModel.id.desc()).all()
 
 @app.post("/api/snippets", response_model=CodeSnippetSchema)
-def create_snippet(snippet: CodeSnippetCreate, db: Session = Depends(get_db)):
+def create_snippet(snippet: CodeSnippetCreate, db: Session = Depends(get_db), current_admin: AdminModel = Depends(get_current_admin)):
     # 產生 8 位元的隨機十六進位字串作為 slug
     random_slug = secrets.token_hex(4)
     db_snippet = CodeSnippetModel(**snippet.dict(), slug=random_slug)
@@ -325,7 +379,7 @@ def get_snippet(slug: str, db: Session = Depends(get_db)):
     return snippet
 
 @app.put("/api/snippets/{slug}", response_model=CodeSnippetSchema)
-def update_snippet(slug: str, snippet_data: CodeSnippetCreate, db: Session = Depends(get_db)):
+def update_snippet(slug: str, snippet_data: CodeSnippetCreate, db: Session = Depends(get_db), current_admin: AdminModel = Depends(get_current_admin)):
     db_snippet = db.query(CodeSnippetModel).filter(CodeSnippetModel.slug == slug).first()
     if not db_snippet:
         raise HTTPException(status_code=404, detail="作品不存在")
@@ -342,7 +396,7 @@ def update_snippet(slug: str, snippet_data: CodeSnippetCreate, db: Session = Dep
     return db_snippet
 
 @app.delete("/api/snippets/{slug}")
-def delete_snippet(slug: str, db: Session = Depends(get_db)):
+def delete_snippet(slug: str, db: Session = Depends(get_db), current_admin: AdminModel = Depends(get_current_admin)):
     db_snippet = db.query(CodeSnippetModel).filter(CodeSnippetModel.slug == slug).first()
     if not db_snippet:
         raise HTTPException(status_code=404, detail="作品不存在")
@@ -381,7 +435,7 @@ def get_post(post_id: int, db: Session = Depends(get_db)):
     return post
 
 @app.post("/api/posts", response_model=PostSchema)
-def create_post(post: PostCreate, db: Session = Depends(get_db)):
+def create_post(post: PostCreate, db: Session = Depends(get_db), current_admin: AdminModel = Depends(get_current_admin)):
     db_post = PostModel(**post.dict())
     db.add(db_post)
     db.commit()
@@ -389,7 +443,7 @@ def create_post(post: PostCreate, db: Session = Depends(get_db)):
     return db_post
 
 @app.put("/api/posts/{post_id}", response_model=PostSchema)
-def update_post(post_id: int, post: PostUpdate, db: Session = Depends(get_db)):
+def update_post(post_id: int, post: PostUpdate, db: Session = Depends(get_db), current_admin: AdminModel = Depends(get_current_admin)):
     db_post = db.query(PostModel).filter(PostModel.id == post_id).first()
     if not db_post:
         raise HTTPException(status_code=404, detail="Post not found")
@@ -402,7 +456,7 @@ def update_post(post_id: int, post: PostUpdate, db: Session = Depends(get_db)):
     return db_post
 
 @app.delete("/api/posts/{post_id}")
-def delete_post(post_id: int, db: Session = Depends(get_db)):
+def delete_post(post_id: int, db: Session = Depends(get_db), current_admin: AdminModel = Depends(get_current_admin)):
     db_post = db.query(PostModel).filter(PostModel.id == post_id).first()
     if not db_post:
         raise HTTPException(status_code=404, detail="Post not found")
@@ -414,7 +468,7 @@ def delete_post(post_id: int, db: Session = Depends(get_db)):
 
 # 1. 新增專案 (ORM 版)
 @app.post("/api/projects")
-def create_project(project: ProjectCreate, db: Session = Depends(get_db)):
+def create_project(project: ProjectCreate, db: Session = Depends(get_db), current_admin: AdminModel = Depends(get_current_admin)):
     db_project = ProjectModel(**project.dict())
     db.add(db_project)
     db.commit()
@@ -423,7 +477,7 @@ def create_project(project: ProjectCreate, db: Session = Depends(get_db)):
 
 # 2. 更新專案 (ORM 版)
 @app.put("/api/projects/{project_id}")
-def update_project(project_id: int, project: ProjectCreate, db: Session = Depends(get_db)):
+def update_project(project_id: int, project: ProjectCreate, db: Session = Depends(get_db), current_admin: AdminModel = Depends(get_current_admin)):
     db_project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
     if not db_project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -438,7 +492,7 @@ def update_project(project_id: int, project: ProjectCreate, db: Session = Depend
 
 # 3. 刪除專案 (ORM 版)
 @app.delete("/api/projects/{project_id}")
-def delete_project(project_id: int, db: Session = Depends(get_db)):
+def delete_project(project_id: int, db: Session = Depends(get_db), current_admin: AdminModel = Depends(get_current_admin)):
     db_project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
     
     if not db_project:
