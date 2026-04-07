@@ -19,5 +19,20 @@ export default defineConfig({
         changeOrigin: true,
       }
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-vue': ['vue', 'vue-router', 'pinia'],
+          'vendor-three': ['three'],
+          'vendor-gsap': ['gsap'],
+          'vendor-codemirror': ['codemirror', 'vue-codemirror6', '@codemirror/lang-css', '@codemirror/lang-html', '@codemirror/lang-javascript', '@codemirror/theme-one-dark'],
+          'vendor-charts': ['echarts', 'apexcharts', 'vue3-apexcharts'],
+          'vendor-markdown': ['markdown-it', 'highlight.js'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1500,
   }
 })
