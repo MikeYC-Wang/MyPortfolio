@@ -13,6 +13,8 @@ const router = useRouter();
 const toast = useToast();
 const post = ref<any>(null);
 const loading = ref(true);
+const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+const getCoverUrl = (img: string) => img.startsWith('http') ? img : `${apiBase}${img}`;
 
 const escapeHtml = (unsafe: string): string => {
   return unsafe
@@ -115,7 +117,7 @@ onMounted(async () => {
         
         <img 
           v-if="post.cover_image" 
-          :src="post.cover_image.startsWith('http') ? post.cover_image : `${import.meta.env.VITE_API_BASE_URL || ''}${post.cover_image}`"
+          :src="getCoverUrl(post.cover_image)"
           class="main-cover" 
         />
 
