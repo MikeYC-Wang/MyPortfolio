@@ -58,6 +58,7 @@ CMS resources are Projects, Blog Posts, and Lab code snippets (HTML/CSS/JS playg
 - Two-token JWT flow: short-lived **access token** (15 min, HS256, signed with `SECRET_KEY`) + opaque **refresh token** (7 days, `secrets.token_urlsafe(32)`, sha256-hashed in `refresh_tokens` table). `/api/login` returns both. `/api/refresh` rotates the refresh token (deletes old row, issues new). `/api/logout` deletes the refresh row. Don't let access tokens live longer or skip rotation.
 - IP-based login lockout: 3 failures in 3 minutes from same IP → 429. IPs come from `get_client_ip(request)` which reads `X-Forwarded-For` (Render is behind a proxy — `request.client.host` alone is wrong).
 - Rate limits via `slowapi` decorators on `/api/login`, `/api/upload`, `/api/github_contributions`, `/api/system_status`. Limiter key function wraps `get_client_ip`.
+- **CORS `allow_methods` is an explicit whitelist**, NOT `["*"]`. When adding a new HTTP method (e.g., a `PATCH` route), you MUST add the method to the `allow_methods` list in `CORSMiddleware` config or the browser preflight will fail. Current list: `["GET","POST","PUT","PATCH","DELETE","OPTIONS"]`.
 
 **Uploads:** `/api/upload` whitelists extensions/MIME (jpg/jpeg/png/gif/webp), enforces 5 MB chunked, deletes partial files on overflow. Public reads go through a custom `/static/uploads/{filename}` handler with regex validation, NOT the `StaticFiles` mount. Don't bypass either.
 
