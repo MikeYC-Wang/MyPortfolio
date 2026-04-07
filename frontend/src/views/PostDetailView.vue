@@ -107,10 +107,10 @@ const cleanupObserver = () => {
 };
 
 // 從目前所有 heading 中，找到「最後一個 top <= 觸發線」的那個
-// 觸發線設在視窗高度的 25% 處（往下捲到該章節時就高亮）
+// 觸發線設在視窗高度的 50% 處（章節標題滾到畫面正中央才高亮）
 const updateActiveByScroll = () => {
   if (trackedHeadings.length === 0) return;
-  const triggerY = window.innerHeight * 0.25;
+  const triggerY = window.innerHeight * 0.5;
   let currentId = trackedHeadings[0]!.id;
   for (const h of trackedHeadings) {
     const top = h.getBoundingClientRect().top;
