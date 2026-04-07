@@ -3,6 +3,7 @@ import shutil
 import uuid
 import datetime
 import secrets
+import hashlib
 import psutil
 import GPUtil
 import requests
@@ -108,6 +109,14 @@ class LoginLogModel(Base):
     is_success = Column(Boolean)
     attempt_time = Column(TIMESTAMP, server_default=func.now())
 
+class RefreshTokenModel(Base):
+    __tablename__ = "refresh_tokens"
+    id = Column(Integer, primary_key=True, index=True)
+    token_hash = Column(String, unique=True, index=True, nullable=False)
+    admin_id = Column(Integer, nullable=False)
+    expires_at = Column(TIMESTAMP, nullable=False)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
 class ApiLogModel(Base):
     __tablename__ = "api_logs"
     id = Column(Integer, primary_key=True, index=True)
@@ -182,6 +191,14 @@ class SkillSchema(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class TokenPair(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
 
 # ==========================================
 # 4. FastAPI 主程式與工具函式
@@ -299,6 +316,19 @@ def create_access_token(data: dict):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+REFRESH_TOKEN_EXPIRE_DAYS = 7
+
+def hash_refresh_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
+def create_refresh_token(db: Session, admin_id: int) -> str:
+    raw = secrets.token_urlsafe(32)
+    token_hash = hash_refresh_token(raw)
+    expires_at = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) + datetime.timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    db.add(RefreshTokenModel(token_hash=token_hash, admin_id=admin_id, expires_at=expires_at))
+    db.commit()
+    return raw
+
 @app.on_event("startup")
 def create_admin_from_env():
     db = SessionLocal()
@@ -327,7 +357,7 @@ def create_admin_from_env():
 def read_root():
     return {"message": "Portfolio API V3.0 Running"}
 
-@app.post("/api/login", response_model=Token)
+@app.post("/api/login", response_model=TokenPair)
 @limiter.limit("5/minute")
 def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     client_ip = get_client_ip(request)
@@ -368,7 +398,47 @@ def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestFor
     db.commit()
 
     access_token = create_access_token(data={"sub": admin.username})
-    return {"access_token": access_token, "token_type": "bearer"}
+    refresh_token = create_refresh_token(db, admin.id)
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+
+@app.post("/api/refresh", response_model=TokenPair)
+@limiter.limit("20/minute")
+def refresh_access_token(request: Request, body: RefreshRequest, db: Session = Depends(get_db)):
+    token_hash = hash_refresh_token(body.refresh_token)
+    row = db.query(RefreshTokenModel).filter(RefreshTokenModel.token_hash == token_hash).first()
+    if not row:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+    if row.expires_at < datetime.datetime.now():
+        db.delete(row)
+        db.commit()
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expired")
+    admin = db.query(AdminModel).filter(AdminModel.id == row.admin_id).first()
+    if not admin:
+        db.delete(row)
+        db.commit()
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+
+    # ROTATE: delete old, create new
+    db.delete(row)
+    db.commit()
+    new_refresh = create_refresh_token(db, admin.id)
+    new_access = create_access_token(data={"sub": admin.username})
+
+    # Opportunistic cleanup of expired tokens
+    try:
+        db.query(RefreshTokenModel).filter(RefreshTokenModel.expires_at < datetime.datetime.now()).delete()
+        db.commit()
+    except Exception:
+        db.rollback()
+
+    return {"access_token": new_access, "refresh_token": new_refresh, "token_type": "bearer"}
+
+@app.post("/api/logout")
+def logout(body: RefreshRequest, db: Session = Depends(get_db)):
+    token_hash = hash_refresh_token(body.refresh_token)
+    db.query(RefreshTokenModel).filter(RefreshTokenModel.token_hash == token_hash).delete()
+    db.commit()
+    return {"message": "logged out"}
 
 ALLOWED_UPLOAD_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp"}
 ALLOWED_UPLOAD_CONTENT_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}

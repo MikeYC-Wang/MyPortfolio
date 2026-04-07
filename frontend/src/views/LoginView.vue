@@ -27,7 +27,8 @@ const handleLogin = async () => {
 
   try {
     const res = await axios.post('/api/login', formData);
-    sessionStorage.setItem('admin_token', res.data.access_token);
+    localStorage.setItem('admin_token', res.data.access_token);
+    localStorage.setItem('admin_refresh_token', res.data.refresh_token);
 
     toast.success('登入成功！'); 
     setTimeout(() => { router.push('/admin'); }, 500);

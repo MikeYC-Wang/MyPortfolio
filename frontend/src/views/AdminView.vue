@@ -79,8 +79,15 @@ const renderedContent = computed(() => md.render(postForm.value.content));
 const renderedProjectContent = computed(() => md.render(projectForm.value.content || ''));
 
 // --- 共用方法 ---
-const logout = () => {
-  sessionStorage.removeItem('admin_token');
+const logout = async () => {
+  const refreshToken = localStorage.getItem('admin_refresh_token');
+  try {
+    await axios.post('/api/logout', { refresh_token: refreshToken });
+  } catch (e) {
+    // Ignore backend errors so logout still works offline
+  }
+  localStorage.removeItem('admin_token');
+  localStorage.removeItem('admin_refresh_token');
   toast.success('已成功登出系統');
   router.push('/login');
 };
