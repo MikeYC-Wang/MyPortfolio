@@ -40,6 +40,8 @@ const textareaRef = ref<HTMLTextAreaElement | null>(null);
 // --- 文章狀態 ---
 const posts = ref<Post[]>([]);
 const currentPostId = ref<number | null>(null);
+const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+const resolveImageUrl = (path: string) => !path ? '' : (path.startsWith('http') ? path : `${apiBase}${path}`);
 const postForm = ref({
   title: '',
   cover_image: '',
@@ -408,7 +410,7 @@ onMounted(() => {
               <input v-model="postForm.cover_image" type="text" placeholder="或貼上圖片網址..." class="url-input" />
               
               <div v-if="postForm.cover_image" class="image-preview">
-                <img :src="postForm.cover_image" alt="Cover" />
+                <img :src="resolveImageUrl(postForm.cover_image)" alt="Cover" />
               </div>
             </div>
           </div>
