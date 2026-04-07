@@ -371,6 +371,60 @@ const moveProject = (index: number, direction: -1 | 1) => {
   scheduleProjectsOrderSave();
 };
 
+// --- Drag & Drop reorder ---
+const dragIndex = ref<number | null>(null);
+const dragOverIndex = ref<number | null>(null);
+const dragKind = ref<'posts' | 'projects' | null>(null);
+
+const onDragStart = (kind: 'posts' | 'projects', idx: number, e: DragEvent) => {
+  dragKind.value = kind;
+  dragIndex.value = idx;
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(idx));
+  }
+};
+
+const onDragOver = (kind: 'posts' | 'projects', idx: number, e: DragEvent) => {
+  if (dragKind.value !== kind) return;
+  e.preventDefault();
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+  dragOverIndex.value = idx;
+};
+
+const onDrop = (kind: 'posts' | 'projects', idx: number, e: DragEvent) => {
+  e.preventDefault();
+  if (dragKind.value !== kind || dragIndex.value === null) return;
+  const from = dragIndex.value;
+  const to = idx;
+  if (from === to) {
+    dragIndex.value = null;
+    dragOverIndex.value = null;
+    return;
+  }
+  if (kind === 'posts') {
+    const arr = posts.value.slice();
+    const [moved] = arr.splice(from, 1);
+    arr.splice(to, 0, moved!);
+    posts.value = arr;
+    schedulePostsOrderSave();
+  } else {
+    const arr = projects.value.slice();
+    const [moved] = arr.splice(from, 1);
+    arr.splice(to, 0, moved!);
+    projects.value = arr;
+    scheduleProjectsOrderSave();
+  }
+  dragIndex.value = null;
+  dragOverIndex.value = null;
+};
+
+const onDragEnd = () => {
+  dragIndex.value = null;
+  dragOverIndex.value = null;
+  dragKind.value = null;
+};
+
 onBeforeUnmount(() => {
   if (postsReorderTimer) clearTimeout(postsReorderTimer);
   if (projectsReorderTimer) clearTimeout(projectsReorderTimer);
@@ -412,30 +466,54 @@ onMounted(() => {
         
         <div class="post-list">
           <template v-if="adminMode === 'posts'">
-            <div v-for="(post, idx) in posts" :key="post.id" class="post-item" :class="{ active: currentPostId === post.id }" @click="selectPostToEdit(post)">
+            <div
+              v-for="(post, idx) in posts"
+              :key="post.id"
+              class="post-item"
+              :class="{ active: currentPostId === post.id, dragging: dragKind === 'posts' && dragIndex === idx, 'drag-over': dragKind === 'posts' && dragOverIndex === idx && dragIndex !== idx }"
+              draggable="true"
+              @dragstart="onDragStart('posts', idx, $event)"
+              @dragover="onDragOver('posts', idx, $event)"
+              @drop="onDrop('posts', idx, $event)"
+              @dragend="onDragEnd"
+              @click="selectPostToEdit(post)"
+            >
+              <span class="drag-handle" title="拖曳排序">⋮⋮</span>
               <div class="post-info">
                 <span class="post-title">{{ post.title }}</span>
                 <span class="post-id">#{{ post.id }}</span>
               </div>
-              <div class="reorder-btns">
+              <div class="row-actions">
                 <button class="btn-reorder" :disabled="idx === 0" @click.stop="movePost(idx, -1)" title="上移">&#9650;</button>
                 <button class="btn-reorder" :disabled="idx === posts.length - 1" @click.stop="movePost(idx, 1)" title="下移">&#9660;</button>
+                <button @click.stop="handleDelete(post.id)" class="btn-delete" title="刪除文章"><i class="fa-solid fa-trash"></i></button>
               </div>
-              <button @click.stop="handleDelete(post.id)" class="btn-delete" title="刪除文章"><i class="fa-solid fa-trash"></i></button>
             </div>
           </template>
 
           <template v-else>
-            <div v-for="(p, idx) in projects" :key="p.id" class="post-item" :class="{ active: currentProjectId === p.id }" @click="selectProjectToEdit(p)">
+            <div
+              v-for="(p, idx) in projects"
+              :key="p.id"
+              class="post-item"
+              :class="{ active: currentProjectId === p.id, dragging: dragKind === 'projects' && dragIndex === idx, 'drag-over': dragKind === 'projects' && dragOverIndex === idx && dragIndex !== idx }"
+              draggable="true"
+              @dragstart="onDragStart('projects', idx, $event)"
+              @dragover="onDragOver('projects', idx, $event)"
+              @drop="onDrop('projects', idx, $event)"
+              @dragend="onDragEnd"
+              @click="selectProjectToEdit(p)"
+            >
+              <span class="drag-handle" title="拖曳排序">⋮⋮</span>
               <div class="post-info">
                 <span class="post-title">{{ p.title }}</span>
                 <span class="post-id">#{{ p.id }}</span>
               </div>
-              <div class="reorder-btns">
+              <div class="row-actions">
                 <button class="btn-reorder" :disabled="idx === 0" @click.stop="moveProject(idx, -1)" title="上移">&#9650;</button>
                 <button class="btn-reorder" :disabled="idx === projects.length - 1" @click.stop="moveProject(idx, 1)" title="下移">&#9660;</button>
+                <button @click.stop="deleteProject(p.id)" class="btn-delete" title="刪除專案"><i class="fa-solid fa-trash"></i></button>
               </div>
-              <button @click.stop="deleteProject(p.id)" class="btn-delete" title="刪除專案"><i class="fa-solid fa-trash"></i></button>
             </div>
           </template>
         </div>
@@ -692,32 +770,56 @@ onMounted(() => {
 }
 .ai-title-chip:hover { border-color: var(--link-active); color: var(--link-active); }
 
-.reorder-btns {
+.row-actions {
   display: inline-flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-right: 6px;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
 }
 .btn-reorder {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: var(--btn-bg);
-  color: var(--text-color);
+  color: var(--text-secondary);
   border: 1px solid var(--border-color);
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   line-height: 1;
   padding: 0;
   transition: all 0.15s;
 }
 .btn-reorder:hover:not(:disabled) {
   background: var(--milk-tea);
-  color: var(--text-color);
+  color: var(--bg-color);
   border-color: var(--milk-tea);
 }
-.btn-reorder:disabled { opacity: 0.3; cursor: not-allowed; }
+.btn-reorder:disabled { opacity: 0.25; cursor: not-allowed; }
+
+.drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  color: var(--text-secondary);
+  cursor: grab;
+  font-size: 1rem;
+  letter-spacing: -2px;
+  user-select: none;
+  flex-shrink: 0;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+.post-item:hover .drag-handle { opacity: 1; }
+.drag-handle:active { cursor: grabbing; }
+
+.post-item.dragging {
+  opacity: 0.4;
+}
+.post-item.drag-over {
+  border-top: 2px solid var(--milk-tea);
+}
 </style>
