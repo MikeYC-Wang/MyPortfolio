@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from '@/api';
 import MarkdownIt from 'markdown-it';
@@ -86,16 +86,78 @@ const handleContentClick = async (e: MouseEvent) => {
   }
 };
 
+// ============ TOC (Table of Contents) ============
+interface TocItem { id: string; text: string; level: number; }
+const toc = ref<TocItem[]>([]);
+const activeId = ref<string>('');
+let observer: IntersectionObserver | null = null;
+
+const cleanupObserver = () => {
+  if (observer) {
+    observer.disconnect();
+    observer = null;
+  }
+};
+
+const buildToc = async () => {
+  await nextTick();
+  cleanupObserver();
+  toc.value = [];
+  const contentEl = document.querySelector('.post-detail-container .content');
+  if (!contentEl) return;
+  const headings = contentEl.querySelectorAll('h2, h3');
+  const items: TocItem[] = [];
+  headings.forEach((h, idx) => {
+    if (!h.id) {
+      h.id = `heading-${idx}`;
+    }
+    items.push({
+      id: h.id,
+      text: h.textContent || '',
+      level: h.tagName === 'H2' ? 2 : 3,
+    });
+  });
+  toc.value = items;
+
+  if (items.length === 0) return;
+
+  observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          activeId.value = (entry.target as HTMLElement).id;
+        }
+      }
+    },
+    { rootMargin: '-20% 0% -70% 0%', threshold: 0 }
+  );
+  headings.forEach((h) => observer!.observe(h));
+  if (items[0]) activeId.value = items[0].id;
+};
+
+const scrollToHeading = (id: string) => {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+watch(() => post.value?.content, () => {
+  if (post.value?.content) buildToc();
+});
+
 onMounted(async () => {
   try {
     const res = await axios.get(`/api/posts/${route.params.id}`);
     post.value = res.data;
+    await buildToc();
   } catch (error) {
     console.error('文章讀取失敗', error);
     router.push('/blog');
   } finally {
     loading.value = false;
   }
+});
+
+onBeforeUnmount(() => {
+  cleanupObserver();
 });
 </script>
 
@@ -128,6 +190,20 @@ onMounted(async () => {
         文章載入錯誤或不存在。
       </div>
     </div>
+
+    <aside v-if="toc.length > 0" class="toc-sidebar" aria-label="目錄">
+      <div class="toc-title">目錄</div>
+      <ul class="toc-list">
+        <li
+          v-for="item in toc"
+          :key="item.id"
+          :class="['toc-item', `toc-level-${item.level}`, { active: activeId === item.id }]"
+          @click="scrollToHeading(item.id)"
+        >
+          {{ item.text }}
+        </li>
+      </ul>
+    </aside>
     <SiteFooter />
   </div>
 </template>
@@ -177,6 +253,80 @@ h1 { font-size: 2.5rem; margin-bottom: 1rem; color: var(--text-color); }
     position: static;
     display: block;
     margin-bottom: 10px;
+  }
+}
+
+/* ==========================================
+   Floating TOC Sidebar
+========================================== */
+.toc-sidebar {
+  position: fixed;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 240px;
+  max-width: 240px;
+  max-height: 70vh;
+  overflow-y: auto;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  z-index: 20;
+}
+
+.toc-title {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+}
+
+.toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.toc-item {
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  padding: 6px 0 6px 0;
+  line-height: 1.4;
+  border-left: 2px solid transparent;
+  padding-left: 10px;
+  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toc-item:hover {
+  color: var(--text-color);
+  background: var(--btn-hover);
+  border-radius: 4px;
+}
+
+.toc-level-3 {
+  padding-left: 24px;
+  font-size: 0.82rem;
+}
+
+.toc-item.active {
+  color: var(--milk-tea);
+  font-weight: 700;
+  border-left: 2px solid var(--milk-tea);
+}
+
+.toc-level-3.active {
+  padding-left: 24px;
+}
+
+@media (max-width: 1024px) {
+  .toc-sidebar {
+    display: none;
   }
 }
 

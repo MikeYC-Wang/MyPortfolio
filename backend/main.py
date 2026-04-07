@@ -70,6 +70,7 @@ class ProjectModel(Base):
     tech_stack = Column(String)
     content = Column(Text, nullable=True)
     is_published = Column(Boolean, default=True)
+    display_order = Column(Integer, default=0, index=True)
 
 class CodeSnippetModel(Base):
     __tablename__ = "code_snippets"
@@ -90,6 +91,7 @@ class PostModel(Base):
     content = Column(Text)
     cover_image = Column(String, nullable=True)
     is_published = Column(Boolean, default=True)
+    display_order = Column(Integer, default=0, index=True)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
 class SkillModel(Base):
@@ -220,6 +222,9 @@ class AIChatRequest(BaseModel):
 
 class AIChatResponse(BaseModel):
     reply: str
+
+class ReorderRequest(BaseModel):
+    order: List[int]  # array of IDs in desired order
 
 # ==========================================
 # 4. FastAPI 主程式與工具函式
@@ -506,7 +511,7 @@ async def upload_image(request: Request, file: UploadFile = File(...), current_a
 # --- Projects ---
 @app.get("/api/projects", response_model=List[ProjectSchema])
 def get_projects(db: Session = Depends(get_db)):
-    return db.query(ProjectModel).filter(ProjectModel.is_published == True).order_by(ProjectModel.id.asc()).all()
+    return db.query(ProjectModel).filter(ProjectModel.is_published == True).order_by(ProjectModel.display_order.asc(), ProjectModel.id.asc()).all()
 
 # --- Code Snippets (Playground) ---
 @app.get("/api/snippets", response_model=List[CodeSnippetSchema])
@@ -577,7 +582,7 @@ def get_skills(db: Session = Depends(get_db)):
 # --- Posts (Blog) ---
 @app.get("/api/posts", response_model=List[PostSchema])
 def get_posts(db: Session = Depends(get_db)):
-    return db.query(PostModel).filter(PostModel.is_published == True).order_by(PostModel.id.asc()).all()
+    return db.query(PostModel).filter(PostModel.is_published == True).order_by(PostModel.display_order.asc(), PostModel.id.desc()).all()
 
 @app.get("/api/posts/{post_id}", response_model=PostSchema)
 def get_post(post_id: int, db: Session = Depends(get_db)):
@@ -615,6 +620,20 @@ def delete_post(post_id: int, db: Session = Depends(get_db), current_admin: Admi
     db.delete(db_post)
     db.commit()
     return {"message": "Deleted successfully"}
+
+# --- Posts 排序 ---
+@app.patch("/api/posts/order")
+@limiter.limit("30/minute")
+def reorder_posts(request: Request, body: ReorderRequest, current_admin: AdminModel = Depends(get_current_admin), db: Session = Depends(get_db)):
+    updated = 0
+    for i, post_id in enumerate(body.order):
+        db_post = db.query(PostModel).filter(PostModel.id == post_id).first()
+        if not db_post:
+            continue
+        db_post.display_order = i
+        updated += 1
+    db.commit()
+    return {"updated": updated}
 
 # --- 專案作品管理 API ---
 
@@ -654,6 +673,20 @@ def delete_project(project_id: int, db: Session = Depends(get_db), current_admin
     db.commit()
     
     return {"message": "Project deleted successfully"}
+
+# --- Projects 排序 ---
+@app.patch("/api/projects/order")
+@limiter.limit("30/minute")
+def reorder_projects(request: Request, body: ReorderRequest, current_admin: AdminModel = Depends(get_current_admin), db: Session = Depends(get_db)):
+    updated = 0
+    for i, project_id in enumerate(body.order):
+        db_project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+        if not db_project:
+            continue
+        db_project.display_order = i
+        updated += 1
+    db.commit()
+    return {"updated": updated}
 
 # 系統數據監控
 @app.get("/api/system_status")

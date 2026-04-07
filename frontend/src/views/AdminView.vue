@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 // import axios from 'axios';
 import axios from '@/api';
 import { useRouter } from 'vue-router';
@@ -315,6 +315,67 @@ const applyTitleSuggestion = (s: string) => {
   aiTitleSuggestions.value = [];
 };
 
+// --- 排序 (Reorder) ---
+let postsReorderTimer: ReturnType<typeof setTimeout> | null = null;
+let projectsReorderTimer: ReturnType<typeof setTimeout> | null = null;
+const REORDER_DEBOUNCE_MS = 500;
+
+const schedulePostsOrderSave = () => {
+  if (postsReorderTimer) clearTimeout(postsReorderTimer);
+  postsReorderTimer = setTimeout(async () => {
+    try {
+      await axios.patch('/api/posts/order', { order: posts.value.map(p => p.id) });
+      toast.success('順序已更新');
+    } catch (e) {
+      toast.error('順序更新失敗，已還原');
+      fetchPosts();
+    }
+  }, REORDER_DEBOUNCE_MS);
+};
+
+const scheduleProjectsOrderSave = () => {
+  if (projectsReorderTimer) clearTimeout(projectsReorderTimer);
+  projectsReorderTimer = setTimeout(async () => {
+    try {
+      await axios.patch('/api/projects/order', { order: projects.value.map(p => p.id) });
+      toast.success('順序已更新');
+    } catch (e) {
+      toast.error('順序更新失敗，已還原');
+      try {
+        const res = await axios.get('/api/projects');
+        projects.value = res.data;
+      } catch {}
+    }
+  }, REORDER_DEBOUNCE_MS);
+};
+
+const movePost = (index: number, direction: -1 | 1) => {
+  const newIndex = index + direction;
+  if (newIndex < 0 || newIndex >= posts.value.length) return;
+  const arr = posts.value.slice();
+  const tmp = arr[index]!;
+  arr[index] = arr[newIndex]!;
+  arr[newIndex] = tmp;
+  posts.value = arr;
+  schedulePostsOrderSave();
+};
+
+const moveProject = (index: number, direction: -1 | 1) => {
+  const newIndex = index + direction;
+  if (newIndex < 0 || newIndex >= projects.value.length) return;
+  const arr = projects.value.slice();
+  const tmp = arr[index]!;
+  arr[index] = arr[newIndex]!;
+  arr[newIndex] = tmp;
+  projects.value = arr;
+  scheduleProjectsOrderSave();
+};
+
+onBeforeUnmount(() => {
+  if (postsReorderTimer) clearTimeout(postsReorderTimer);
+  if (projectsReorderTimer) clearTimeout(projectsReorderTimer);
+});
+
 watch(adminMode, (newMode) => {
   if (newMode === 'projects') {
     fetchAllData();
@@ -351,20 +412,28 @@ onMounted(() => {
         
         <div class="post-list">
           <template v-if="adminMode === 'posts'">
-            <div v-for="post in posts" :key="post.id" class="post-item" :class="{ active: currentPostId === post.id }" @click="selectPostToEdit(post)">
+            <div v-for="(post, idx) in posts" :key="post.id" class="post-item" :class="{ active: currentPostId === post.id }" @click="selectPostToEdit(post)">
               <div class="post-info">
                 <span class="post-title">{{ post.title }}</span>
                 <span class="post-id">#{{ post.id }}</span>
+              </div>
+              <div class="reorder-btns">
+                <button class="btn-reorder" :disabled="idx === 0" @click.stop="movePost(idx, -1)" title="上移">&#9650;</button>
+                <button class="btn-reorder" :disabled="idx === posts.length - 1" @click.stop="movePost(idx, 1)" title="下移">&#9660;</button>
               </div>
               <button @click.stop="handleDelete(post.id)" class="btn-delete" title="刪除文章"><i class="fa-solid fa-trash"></i></button>
             </div>
           </template>
 
           <template v-else>
-            <div v-for="p in projects" :key="p.id" class="post-item" :class="{ active: currentProjectId === p.id }" @click="selectProjectToEdit(p)">
+            <div v-for="(p, idx) in projects" :key="p.id" class="post-item" :class="{ active: currentProjectId === p.id }" @click="selectProjectToEdit(p)">
               <div class="post-info">
                 <span class="post-title">{{ p.title }}</span>
                 <span class="post-id">#{{ p.id }}</span>
+              </div>
+              <div class="reorder-btns">
+                <button class="btn-reorder" :disabled="idx === 0" @click.stop="moveProject(idx, -1)" title="上移">&#9650;</button>
+                <button class="btn-reorder" :disabled="idx === projects.length - 1" @click.stop="moveProject(idx, 1)" title="下移">&#9660;</button>
               </div>
               <button @click.stop="deleteProject(p.id)" class="btn-delete" title="刪除專案"><i class="fa-solid fa-trash"></i></button>
             </div>
@@ -622,4 +691,33 @@ onMounted(() => {
   font-size: 0.85rem;
 }
 .ai-title-chip:hover { border-color: var(--link-active); color: var(--link-active); }
+
+.reorder-btns {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-right: 6px;
+}
+.btn-reorder {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--btn-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  line-height: 1;
+  padding: 0;
+  transition: all 0.15s;
+}
+.btn-reorder:hover:not(:disabled) {
+  background: var(--milk-tea);
+  color: var(--text-color);
+  border-color: var(--milk-tea);
+}
+.btn-reorder:disabled { opacity: 0.3; cursor: not-allowed; }
 </style>

@@ -20,6 +20,29 @@ const projects = ref<Project[]>([]);
 const isLoading = ref(true);
 const errorMsg = ref('');
 
+// --- 分頁設定 ---
+const PAGE_SIZE = 6;
+const currentPage = ref(1);
+const totalPages = computed(() => Math.max(1, Math.ceil(projects.value.length / PAGE_SIZE)));
+const pagedItems = computed(() =>
+  projects.value.slice((currentPage.value - 1) * PAGE_SIZE, currentPage.value * PAGE_SIZE)
+);
+const pageNumbers = computed(() => {
+  const total = totalPages.value;
+  const cur = currentPage.value;
+  let start = Math.max(1, cur - 2);
+  let end = Math.min(total, start + 4);
+  start = Math.max(1, end - 4);
+  const arr: number[] = [];
+  for (let i = start; i <= end; i++) arr.push(i);
+  return arr;
+});
+const goToPage = (p: number) => {
+  if (p < 1 || p > totalPages.value) return;
+  currentPage.value = p;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
 // 控制彈出視窗的狀態
 const selectedProject = ref<Project | null>(null);
 
@@ -93,8 +116,8 @@ onMounted(async () => {
         </div>
 
         <div v-else class="projects-grid">
-          <div 
-            v-for="p in projects" 
+          <div
+            v-for="p in pagedItems"
             :key="p.id" 
             class="project-card"
             @click="openModal(p)"
@@ -112,6 +135,24 @@ onMounted(async () => {
               </span>
             </div>
           </div>
+        </div>
+
+        <div v-if="!isLoading && !errorMsg && totalPages > 1" class="pagination">
+          <button class="page-btn" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">
+            &laquo; 上一頁
+          </button>
+          <button
+            v-for="n in pageNumbers"
+            :key="n"
+            class="page-btn"
+            :class="{ active: n === currentPage }"
+            @click="goToPage(n)"
+          >
+            {{ n }}
+          </button>
+          <button class="page-btn" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">
+            下一頁 &raquo;
+          </button>
         </div>
 
       </div>
@@ -218,4 +259,35 @@ onMounted(async () => {
 :deep(.content-preview a:hover) {
   text-decoration: underline;
 }
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 3rem;
+  flex-wrap: wrap;
+}
+.page-btn {
+  background: var(--btn-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  min-width: 40px;
+  transition: all 0.2s;
+}
+.page-btn:hover:not(:disabled):not(.active) {
+  background: var(--milk-tea);
+  color: var(--text-color);
+}
+.page-btn.active {
+  background: var(--milk-tea);
+  color: var(--text-color);
+  border-color: var(--milk-tea);
+  font-weight: bold;
+}
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 </style>

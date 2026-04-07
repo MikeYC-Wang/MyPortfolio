@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 // import axios from 'axios';
 import axios from '@/api';
 import { RouterLink } from 'vue-router';
@@ -15,6 +15,29 @@ interface Post {
 
 const posts = ref<Post[]>([]);
 const loading = ref(true);
+
+// --- 分頁設定 ---
+const PAGE_SIZE = 9;
+const currentPage = ref(1);
+const totalPages = computed(() => Math.max(1, Math.ceil(posts.value.length / PAGE_SIZE)));
+const pagedItems = computed(() =>
+  posts.value.slice((currentPage.value - 1) * PAGE_SIZE, currentPage.value * PAGE_SIZE)
+);
+const pageNumbers = computed(() => {
+  const total = totalPages.value;
+  const cur = currentPage.value;
+  let start = Math.max(1, cur - 2);
+  let end = Math.min(total, start + 4);
+  start = Math.max(1, end - 4);
+  const arr: number[] = [];
+  for (let i = start; i <= end; i++) arr.push(i);
+  return arr;
+});
+const goToPage = (p: number) => {
+  if (p < 1 || p > totalPages.value) return;
+  currentPage.value = p;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
 // 截取文章摘要 (前 100 字)
 const getExcerpt = (text: string) => {
@@ -49,7 +72,7 @@ onMounted(async () => {
       <div v-if="loading" class="loading">Loading...</div>
 
       <div v-else class="post-grid">
-        <div v-for="post in posts" :key="post.id" class="post-card">
+        <div v-for="post in pagedItems" :key="post.id" class="post-card">
           <div 
           v-if="post.cover_image" 
           class="post-cover" 
@@ -68,6 +91,24 @@ onMounted(async () => {
             </RouterLink>
           </div>
         </div>
+      </div>
+
+      <div v-if="!loading && totalPages > 1" class="pagination">
+        <button class="page-btn" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">
+          &laquo; 上一頁
+        </button>
+        <button
+          v-for="n in pageNumbers"
+          :key="n"
+          class="page-btn"
+          :class="{ active: n === currentPage }"
+          @click="goToPage(n)"
+        >
+          {{ n }}
+        </button>
+        <button class="page-btn" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">
+          下一頁 &raquo;
+        </button>
       </div>
     </div>
     <SiteFooter />
@@ -134,4 +175,35 @@ h2 {
   transition: gap 0.2s;
 }
 .read-more-btn:hover { gap: 10px; }
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 3rem;
+  flex-wrap: wrap;
+}
+.page-btn {
+  background: var(--btn-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  min-width: 40px;
+  transition: all 0.2s;
+}
+.page-btn:hover:not(:disabled):not(.active) {
+  background: var(--milk-tea);
+  color: var(--text-color);
+}
+.page-btn.active {
+  background: var(--milk-tea);
+  color: var(--text-color);
+  border-color: var(--milk-tea);
+  font-weight: bold;
+}
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 </style>
