@@ -147,13 +147,15 @@ onMounted(async () => {
   try {
     const res = await axios.get(`/api/posts/${route.params.id}`);
     post.value = res.data;
-    await buildToc();
   } catch (error) {
     console.error('文章讀取失敗', error);
     router.push('/blog');
+    return;
   } finally {
     loading.value = false;
   }
+  // 必須在 loading 變 false、article 元素 render 出來之後才能掃 .content
+  await buildToc();
 });
 
 onBeforeUnmount(() => {

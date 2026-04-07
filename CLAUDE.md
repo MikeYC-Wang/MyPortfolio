@@ -90,6 +90,8 @@ CMS resources are Projects, Blog Posts, and Lab code snippets (HTML/CSS/JS playg
 
 **ChatWidget mounting:** `src/components/ChatWidget.vue` is mounted in `App.vue` and hidden on routes containing `/admin`, `/login`, or `/dashboard`. Chat history persists in `sessionStorage` (key `mike_chat_history_v1`), capped at 20 messages.
 
+**PostDetailView TOC scan order:** `buildToc()` queries the DOM for `.content` headings via `document.querySelector`. It MUST run AFTER `loading.value = false`, otherwise the v-if branch is still showing the spinner and `.content` doesn't exist yet → silent empty TOC. The pattern is: fetch → set post → set loading false → `await buildToc()` (NOT inside the try block before loading is cleared).
+
 ### Deployment specifics that affect code changes
 
 - Vite `base: '/MyPortfolio/'` — any hardcoded asset paths must respect this base, or use Vite's URL handling. Don't change the base without updating GitHub Pages config.
