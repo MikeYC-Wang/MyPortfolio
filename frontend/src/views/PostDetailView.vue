@@ -91,11 +91,37 @@ interface TocItem { id: string; text: string; level: number; }
 const toc = ref<TocItem[]>([]);
 const activeId = ref<string>('');
 let observer: IntersectionObserver | null = null;
+let scrollHandler: (() => void) | null = null;
+let trackedHeadings: HTMLElement[] = [];
 
 const cleanupObserver = () => {
   if (observer) {
     observer.disconnect();
     observer = null;
+  }
+  if (scrollHandler) {
+    window.removeEventListener('scroll', scrollHandler);
+    scrollHandler = null;
+  }
+  trackedHeadings = [];
+};
+
+// 從目前所有 heading 中，找到「最後一個 top <= 觸發線」的那個
+// 觸發線設在視窗高度的 25% 處（往下捲到該章節時就高亮）
+const updateActiveByScroll = () => {
+  if (trackedHeadings.length === 0) return;
+  const triggerY = window.innerHeight * 0.25;
+  let currentId = trackedHeadings[0]!.id;
+  for (const h of trackedHeadings) {
+    const top = h.getBoundingClientRect().top;
+    if (top <= triggerY) {
+      currentId = h.id;
+    } else {
+      break;
+    }
+  }
+  if (activeId.value !== currentId) {
+    activeId.value = currentId;
   }
 };
 
@@ -121,18 +147,14 @@ const buildToc = async () => {
 
   if (items.length === 0) return;
 
-  observer = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          activeId.value = (entry.target as HTMLElement).id;
-        }
-      }
-    },
-    { rootMargin: '-20% 0% -70% 0%', threshold: 0 }
-  );
-  headings.forEach((h) => observer!.observe(h));
-  if (items[0]) activeId.value = items[0].id;
+  // 用 scroll handler + getBoundingClientRect 的「最近上方」演算法，比 IntersectionObserver 多個交集穩定
+  trackedHeadings = Array.from(headings) as HTMLElement[];
+  scrollHandler = () => {
+    requestAnimationFrame(updateActiveByScroll);
+  };
+  window.addEventListener('scroll', scrollHandler, { passive: true });
+  // 初始呼叫一次取得目前位置
+  updateActiveByScroll();
 };
 
 const scrollToHeading = (id: string) => {
