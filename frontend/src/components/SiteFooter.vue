@@ -1,3 +1,7 @@
+<script setup lang="ts">
+const currentYear = new Date().getFullYear();
+</script>
+
 <template>
   <footer class="site-footer">
     <div class="footer-container">
@@ -29,7 +33,7 @@
     </div>
 
     <div class="footer-bottom">
-      <p>© 2026 MikeYC-Wang. All rights reserved.</p>
+      <p>© {{ currentYear }} MikeYC-Wang. All rights reserved.</p>
       <p class="build-info">Powered by Vue 3 & FastAPI</p>
     </div>
   </footer>
