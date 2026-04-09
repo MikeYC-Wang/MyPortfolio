@@ -9,6 +9,7 @@ import 'highlight.js/styles/atom-one-dark.css';
 import { useToast } from 'vue-toastification';
 import '@/assets/css/admin.css';
 import SiteFooter from '@/components/SiteFooter.vue';
+import AdminAIWidget from '@/components/AdminAIWidget.vue';
 
 // --- 型別定義 ---
 interface Post {
@@ -268,52 +269,7 @@ const deleteProject = async (id: number) => {
   }
 };
 
-// --- AI 助手 ---
-type AiAction = 'polish' | 'translate_en' | 'summarize' | 'title_suggestions';
-const aiLoading = ref<AiAction | null>(null);
-const aiSummary = ref('');
-const aiTitleSuggestions = ref<string[]>([]);
-
-const runAiAction = async (action: AiAction) => {
-  const text = action === 'title_suggestions' ? postForm.value.title : postForm.value.content;
-  if (!text || !text.trim()) {
-    toast.warning(action === 'title_suggestions' ? '請先輸入標題' : '請先輸入內容');
-    return;
-  }
-  aiLoading.value = action;
-  try {
-    const res = await axios.post('/api/ai/assist', { text, action });
-    const result: string = res.data.result ?? '';
-    if (action === 'polish' || action === 'translate_en') {
-      postForm.value.content = result;
-      toast.success(action === 'polish' ? '潤稿完成' : '翻譯完成');
-    } else if (action === 'summarize') {
-      aiSummary.value = result;
-      try { await navigator.clipboard.writeText(result); } catch {}
-      toast.success('摘要已生成（已複製到剪貼簿）');
-    } else if (action === 'title_suggestions') {
-      aiTitleSuggestions.value = result
-        .split('\n')
-        .map((s) => s.replace(/^[\s\-\d\.、）)]+/, '').trim())
-        .filter((s) => s.length > 0)
-        .slice(0, 8);
-      toast.success('已生成標題建議');
-    }
-  } catch (error: any) {
-    const status = error?.response?.status;
-    if (status === 503) toast.error('AI 服務暫時不可用，請稍後再試');
-    else if (status === 429) toast.error('請求太頻繁，請稍候');
-    else if (status === 401) toast.error('請重新登入');
-    else toast.error('AI 操作失敗，請稍後再試');
-  } finally {
-    aiLoading.value = null;
-  }
-};
-
-const applyTitleSuggestion = (s: string) => {
-  postForm.value.title = s;
-  aiTitleSuggestions.value = [];
-};
+// AI 助手已抽出為 AdminAIWidget 元件，這裡只暴露 getter/setter 給它使用
 
 // --- 排序 (Reorder) ---
 let postsReorderTimer: ReturnType<typeof setTimeout> | null = null;
@@ -562,34 +518,6 @@ onMounted(() => {
             </div>
           </div>
 
-          <div class="ai-assist-bar">
-            <span class="ai-label"><i class="fa-solid fa-wand-magic-sparkles"></i> AI 助手</span>
-            <button class="ai-btn" :disabled="aiLoading !== null" @click="runAiAction('polish')">
-              <i class="fa-solid" :class="aiLoading === 'polish' ? 'fa-spinner fa-spin' : 'fa-feather'"></i> 潤稿
-            </button>
-            <button class="ai-btn" :disabled="aiLoading !== null" @click="runAiAction('translate_en')">
-              <i class="fa-solid" :class="aiLoading === 'translate_en' ? 'fa-spinner fa-spin' : 'fa-language'"></i> 翻譯英文
-            </button>
-            <button class="ai-btn" :disabled="aiLoading !== null" @click="runAiAction('summarize')">
-              <i class="fa-solid" :class="aiLoading === 'summarize' ? 'fa-spinner fa-spin' : 'fa-align-left'"></i> 生成摘要
-            </button>
-            <button class="ai-btn" :disabled="aiLoading !== null" @click="runAiAction('title_suggestions')">
-              <i class="fa-solid" :class="aiLoading === 'title_suggestions' ? 'fa-spinner fa-spin' : 'fa-lightbulb'"></i> 標題建議
-            </button>
-          </div>
-
-          <div v-if="aiTitleSuggestions.length" class="ai-panel">
-            <div class="ai-panel-title">標題建議（點擊套用）：</div>
-            <div class="ai-title-list">
-              <button v-for="(s, i) in aiTitleSuggestions" :key="i" class="ai-title-chip" @click="applyTitleSuggestion(s)">{{ s }}</button>
-            </div>
-          </div>
-
-          <div v-if="aiSummary" class="ai-panel">
-            <div class="ai-panel-title">AI 摘要：<button class="ai-clear" @click="aiSummary = ''">清除</button></div>
-            <div class="ai-summary-body">{{ aiSummary }}</div>
-          </div>
-
           <div class="editor-area">
             <div class="editor-pane">
               <div class="pane-header">
@@ -677,6 +605,15 @@ onMounted(() => {
       </main>
     </div>
     <SiteFooter />
+
+    <!-- Claude AI 助手浮動視窗 (兩個 mode 都可以用) -->
+    <AdminAIWidget
+      :mode-label="adminMode === 'posts' ? '文章' : '專案'"
+      :get-text="() => adminMode === 'posts' ? postForm.content : projectForm.content"
+      :get-title="() => adminMode === 'posts' ? postForm.title : projectForm.title"
+      :set-text="(s) => { if (adminMode === 'posts') postForm.content = s; else projectForm.content = s; }"
+      :set-title="(s) => { if (adminMode === 'posts') postForm.title = s; else projectForm.title = s; }"
+    />
   </div>
 </template>
 
@@ -694,81 +631,6 @@ onMounted(() => {
 :deep(blockquote) { border-left: 4px solid var(--link-active); padding-left: 1rem; color: var(--link-color); }
 :deep(ul), :deep(ol) { padding-left: 20px; }
 :deep(a) { color: #58a6ff; text-decoration: none; }
-
-.ai-assist-bar {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 10px 14px;
-  margin: 0 0 12px 0;
-  background: rgba(0, 242, 255, 0.05);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-}
-.ai-label {
-  color: var(--link-active);
-  font-weight: bold;
-  font-size: 0.9rem;
-  margin-right: 6px;
-}
-.ai-btn {
-  background: var(--btn-bg);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s;
-}
-.ai-btn:hover:not(:disabled) {
-  background: var(--btn-hover);
-  border-color: var(--link-active);
-  color: var(--link-active);
-}
-.ai-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.ai-panel {
-  margin: 0 0 12px 0;
-  padding: 12px 14px;
-  background: rgba(0, 242, 255, 0.04);
-  border: 1px dashed var(--border-color);
-  border-radius: 8px;
-}
-.ai-panel-title {
-  font-size: 0.85rem;
-  color: var(--link-active);
-  font-weight: bold;
-  margin-bottom: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.ai-clear {
-  background: transparent;
-  border: 1px solid var(--border-color);
-  color: var(--text-color);
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  cursor: pointer;
-}
-.ai-summary-body { white-space: pre-wrap; line-height: 1.7; font-size: 0.9rem; }
-.ai-title-list { display: flex; flex-wrap: wrap; gap: 8px; }
-.ai-title-chip {
-  background: var(--btn-bg);
-  border: 1px solid var(--border-color);
-  color: var(--text-color);
-  padding: 6px 12px;
-  border-radius: 16px;
-  cursor: pointer;
-  font-size: 0.85rem;
-}
-.ai-title-chip:hover { border-color: var(--link-active); color: var(--link-active); }
 
 .row-actions {
   display: inline-flex;
