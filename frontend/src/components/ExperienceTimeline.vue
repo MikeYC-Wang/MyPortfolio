@@ -60,6 +60,18 @@ defineProps<{ isDark: boolean }>();
 // === 真實數據 ===
 const experiences = [
   {
+    title: '程式分析師 (Program Analyst)',
+    company: '精誠資訊 (Systex)',
+    duration: '2026.04 - 至今',
+    icon: 'fa-solid fa-chart-line',
+    details: [
+      '負責證券／期貨領域 Gateway 與中台系統的開發與維運。',
+      '同時參與醫療相關新專案，跨足金融與醫療兩大產業領域。',
+      '主要技術棧為 .NET Core 與 Java，導入微服務架構進行模組化設計。',
+      '使用 n8n 等自動化工具串接系統流程，提升開發與維運效率。'
+    ]
+  },
+  {
     title: '前端工程師 (Front End Engineer)',
     company: '方達科技股份有限公司',
     duration: '2025.07 - 2026.03',

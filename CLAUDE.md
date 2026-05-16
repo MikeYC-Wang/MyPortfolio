@@ -31,6 +31,10 @@ npm run preview      # preview built dist
 
 Node version is pinned in `frontend/package.json` engines: `^20.19.0 || >=22.12.0`.
 
+**Windows shell caveat:** `build-only` and `build:ssg` use `cp dist/index.html dist/404.html` (Unix). On Windows this only works in **Git Bash or WSL** — plain `cmd`/PowerShell will fail. Either run npm scripts from Git Bash, or replace `cp` with a cross-platform alternative if you change the script.
+
+**Test suite status:** `npm run test:unit` currently **fails out of the box** — the only spec is the scaffolded `src/__tests__/App.spec.ts` which doesn't match the real `App.vue`. CI does NOT run unit tests yet. Don't take a red `test:unit` as a regression; either fix/delete the scaffolded spec or skip it.
+
 Backend (run from `backend/`, with venv active):
 
 ```bash
@@ -67,20 +71,21 @@ CMS resources are Projects, Blog Posts, and Lab code snippets (HTML/CSS/JS playg
 **Schema migrations:** `Base.metadata.create_all` only CREATES new tables, never ALTERs. If you add a column to an existing model (e.g., `ProjectModel.is_published` was added this way), you MUST run manual SQL on the deployed Postgres (`ALTER TABLE ... ADD COLUMN ...`).
 
 **AI integration (`/api/ai/*`):**
-- `/api/ai/assist` — admin-only writing helper, calls **Claude Haiku 4.5** via `anthropic` SDK. 4 actions: `polish` / `translate_en` / `summarize` / `title_suggestions`. Rate-limited 20/min.
+- `/api/ai/assist` — admin-only writing helper, calls **Claude Haiku 4.5** via `anthropic` SDK. 4 actions: `polish` / `translate_en` / `summarize` / `title_suggestions`. Rate-limited 20/min. Frontend consumer is `src/components/AdminAIWidget.vue` (mounted inside `AdminView.vue`) — it shows a **preview-before-apply** step so the admin can accept/reject the AI suggestion before it overwrites the form field. Touch the widget for UX changes, not the backend.
 - `/api/ai/chat` — public visitor chatbot, calls **Gemini 2.5 Flash** via `google-genai` SDK. Stuffs published projects + 20 latest posts (truncated) into the system prompt as context. Rate-limited 10/min, max 20 messages per request, 8000 chars total.
 - Both SDK imports are **lazy** (inside the handler, wrapped in try/except ImportError → 503). The app boots even without the SDKs installed. Don't move them to top-level.
 - Both endpoints check their API key (`ANTHROPIC_API_KEY` / `GEMINI_API_KEY`) and return 503 if missing — keys are optional, the rest of the app works without them.
 
 ### Frontend (`frontend/src`)
 
-- `api.ts` — single shared axios instance. Always import this (`import api from '@/api'`) rather than calling axios directly. It carries the auth interceptors:
+- `api.ts` — single shared axios instance. Always import this (`import api from '@/api'`) rather than calling axios directly. **No other file in `src/` should `import axios` directly** — doing so bypasses the auth + refresh interceptors below and will silently break authenticated requests. The one exception is `api.ts` itself, which uses bare `axios` for the internal `/api/refresh` call to avoid recursion. It carries the auth interceptors:
   - Request interceptor attaches `Authorization: Bearer <localStorage.admin_token>`.
   - Response interceptor implements **single-flight refresh-on-401**: on 401, calls `/api/refresh` exactly once (shared `refreshPromise` for concurrent failures), updates BOTH `admin_token` and `admin_refresh_token` in localStorage (refresh tokens rotate), retries the original request. On refresh failure, clears storage and redirects to `/login`. The internal refresh call uses **bare `axios`**, not `api`, to avoid recursive interceptors. Don't break this pattern.
 - Token storage: `localStorage` keys `admin_token` (access) and `admin_refresh_token` (refresh). Survives tab close. Logout (`AdminView.vue`) calls `POST /api/logout` then clears both keys.
 - Backend base URL comes from `import.meta.env.VITE_API_BASE_URL` (set in `frontend/.env.production`). Empty in dev so the Vite `/api` proxy in `vite.config.ts` takes over.
 - `router/index.ts` — Vue Router; admin/dashboard routes guard against missing `admin_token`.
 - Path alias `@` → `frontend/src`.
+- **Dead scaffolding to ignore:** `src/stores/counter.ts` is the default Pinia template store and is unused. Don't take it as a pattern; the project doesn't otherwise use Pinia stores yet.
 
 **Theming:** All visual styling MUST go through CSS variables defined in `src/assets/css/Theme.css` (`--bg-color`, `--card-bg`, `--text-color`, `--milk-tea`, `--milk-tea-dark`, `--gradient-text`, `--btn-bg`, `--btn-hover`, `--border-color`, …). The site has 3 modes — `:root` defaults, `body.theme-dark`, `body.theme-light` — and all 3 redefine the same variable names. Hardcoding hex colors in components breaks light-mode. When adding a new component, copy the variable names from an existing themed component (e.g., `ChatWidget.vue`).
 
