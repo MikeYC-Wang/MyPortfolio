@@ -1,0 +1,97 @@
+<!DOCTYPE html><html lang=""><head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/MyPortfolio/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mike's Portfolio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <script type="module" crossorigin="" src="/MyPortfolio/assets/index-Pt8o9sHr.js"></script>
+    <link rel="modulepreload" crossorigin="" href="/MyPortfolio/assets/vendor-vue-BcwxqbTl.js">
+    <link rel="modulepreload" crossorigin="" href="/MyPortfolio/assets/vendor-three-D0q_0z2u.js">
+    <link rel="modulepreload" crossorigin="" href="/MyPortfolio/assets/vendor-gsap-DDlvirwQ.js">
+    <link rel="modulepreload" crossorigin="" href="/MyPortfolio/assets/vendor-charts-Cb1b1oJr.js">
+    <link rel="modulepreload" crossorigin="" href="/MyPortfolio/assets/vendor-markdown-BWVDAKFt.js">
+    <link rel="modulepreload" crossorigin="" href="/MyPortfolio/assets/vendor-codemirror-BnVZRP60.js">
+    <link rel="stylesheet" crossorigin="" href="/MyPortfolio/assets/index-B42Y1Usn.css">
+  </head>
+  <body class="theme-dark">
+    <div id="app" data-v-app=""><div data-v-61045575="" data-v-bbcd8d65="" class="hacker-intro"><canvas data-v-61045575="" class="noise-canvas" width="400" height="200"></canvas><div data-v-61045575="" class="scanlines"></div><div data-v-61045575="" class="content-wrapper"><div data-v-61045575="" class="logs-container" style="display: none; opacity: 0;"><p data-v-61045575="" class="log-item" style="translate: none; rotate: none; scale: none; transform: translate(0px, 0px); opacity: 1;">&gt; System check...</p><p data-v-61045575="" class="log-item" style="translate: none; rotate: none; scale: none; transform: translate(0px, 0px); opacity: 1;">&gt; Allocating memory...</p><p data-v-61045575="" class="log-item" style="translate: none; rotate: none; scale: none; transform: translate(0px, 0px); opacity: 1;">&gt; Loading visual modules...</p><p data-v-61045575="" class="log-item" style="translate: none; rotate: none; scale: none; transform: translate(0px, 0px); opacity: 1;">&gt; BYPASSING FIREWALL...</p></div><div data-v-61045575="" class="subtitle-container"><h1 data-v-61045575="" class="cn-text">哈囉，我1110</h1><p data-v-61045575="" class="en-text" style="opacity: 0.456;">Hello, IIWCIBN</p></div></div></div><div data-v-bbcd8d65="" class="app-wrapper"><div data-v-cc2f68c0="" data-v-bbcd8d65="" class="cursor-container desktop-only"><div data-v-cc2f68c0="" class="cursor-dot" style="transform: translate3d(calc(-50% + 400px), calc(-50% + 300px), 0px);"></div><div data-v-cc2f68c0="" class="cursor-ring" style="transform: translate3d(calc(-50% + 400px), calc(-50% + 300px), 0px);"></div></div> <div data-v-9d2a6ebf="" data-v-bbcd8d65="" class="three-bg"><canvas data-engine="three.js r181" width="800" height="600" style="display: block; width: 800px; height: 600px;"></canvas></div><header data-v-bbcd8d65=""><div data-v-bbcd8d65="" class="nav-left"><a data-v-bbcd8d65="" href="/MyPortfolio/" class="logo-link"><img data-v-bbcd8d65="" src="/MyPortfolio/logo.png" alt="MikeYC Logo" class="site-logo"></a><nav data-v-bbcd8d65="" class="nav-links desktop-only"><a data-v-bbcd8d65="" href="/MyPortfolio/" class="">首頁</a><a data-v-bbcd8d65="" href="/MyPortfolio/lab" class="">靈感碎片</a><a data-v-bbcd8d65="" href="/MyPortfolio/projects" class="">專案作品</a><a data-v-bbcd8d65="" href="/MyPortfolio/blog" class="">個人部落格</a><a data-v-bbcd8d65="" href="/MyPortfolio/admin" class="">後台管理</a><a data-v-bbcd8d65="" href="/MyPortfolio/dashboard" class="">控制台</a></nav></div><div data-v-bbcd8d65="" class="actions nav-right"><button data-v-bbcd8d65="" class="theme-btn" title="切換到淺色模式"><svg data-v-bbcd8d65="" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path data-v-bbcd8d65="" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg><span data-v-bbcd8d65="" class="btn-text">Dark</span></button><button data-v-bbcd8d65="" class="hamburger-btn"><i data-v-bbcd8d65="" class="fa-solid fa-bars"></i></button></div></header><!----><main data-v-bbcd8d65=""><div data-v-3859b43c="" data-v-bbcd8d65="" class=""><div data-v-3859b43c="" class="post-detail-container"><article data-v-3859b43c="" class="markdown-body"><a data-v-3859b43c="" href="/MyPortfolio/blog" class="back-link"><i data-v-3859b43c="" class="fa-solid fa-arrow-left"></i> 回列表 </a><div data-v-3859b43c="" class="post-header"><h1 data-v-3859b43c="">為什麼單執行緒可以處理幾萬個連線？淺談 Event Loop 與 Async/Await 的底層魔法</h1></div><img data-v-3859b43c="" src="https://MikeYC-Wang.github.io/MyPortfolio/images/Photo_7.png" class="main-cover"><div data-v-3859b43c="" class="content"><p>如果你有寫過 Node.js 或 FastAPI，那你對 <code>async</code> 和 <code>await</code> 這兩個單字一定不陌生。我們天天寫、到處加，但你有沒有停下來想過一個非常違反直覺的問題：</p>
+<p><strong>「JavaScript (Node.js) 和 Python 的 Event Loop 基本上都是單執行緒 (Single-threaded) 的。一個員工（執行緒）一次只能做一件事，那它到底是怎麼『同時』處理幾萬個使用者的 API 請求的？」</strong></p>
+<p>今天我們不看生硬的原始碼，直接用一間「餐廳」來搞懂這個被稱為 <strong>非阻塞 I/O (Non-blocking I/O)</strong> 與 <strong>事件迴圈 (Event Loop)</strong> 的黑魔法。</p>
+<hr>
+<h3 id="heading-0">🍔 傳統的多執行緒 (Multi-threading)：霸氣但笨重的土豪餐廳</h3>
+<p>想像一間傳統的餐廳（例如早期的 Java 或 PHP Apache 伺服器）。
+這間餐廳的運作模式是：<strong>一個服務生（執行緒）專門服務一桌客人</strong>。</p>
+<ol>
+<li>客人 A 點了一碗牛肉麵。</li>
+<li>服務生把菜單交給廚房後，<strong>他就站在廚房門口死死地盯著鍋子等（這叫 Blocking 阻塞）</strong>。</li>
+<li>等了 10 分鐘，麵煮好了，服務生端給客人 A。</li>
+<li>服務生再去接客人 B 的單。</li>
+</ol>
+<p>如果今天同時來了 1 萬個客人怎麼辦？老闆（作業系統）就必須馬上僱用 1 萬個服務生！但每個服務生都要佔用薪水跟空間（記憶體 CPU 資源 Context Switch），到最後餐廳直接擠爆破產（伺服器當機）。</p>
+<hr>
+<h3 id="heading-1">🚀 單執行緒的非阻塞魔法 (Non-blocking)：時間管理大師</h3>
+<p>現在來看看 Node.js 和 FastAPI 這種「單執行緒 + 非阻塞」的餐廳是怎麼運作的。
+這間餐廳<strong>只有一個超級服務生（Main Thread 主執行緒）</strong>。</p>
+<ol>
+<li>客人 A 點了牛肉麵。</li>
+<li>服務生把菜單丟給廚房（<strong>丟給作業系統底層去處理網路或資料庫 I/O</strong>）。</li>
+<li><strong>重點來了：服務生不傻等！</strong> 他轉頭立刻去幫客人 B 點餐。</li>
+<li>客人 B 點餐完，廚房也把資料庫的查詢搞定了，廚房按了一下鈴（<strong>觸發 Event 事件</strong>）。</li>
+<li>服務生聽到鈴聲，過去把牛肉麵端給客人 A。</li>
+</ol>
+<p>發現了嗎？<strong>這個服務生（主執行緒）從頭到尾都沒有閒下來過，但他卻靠著一個人，同時處理了無數個客人的請求。</strong> 這就是單執行緒能撐起萬級併發連線的核心秘密！</p>
+<hr>
+<h3 id="heading-2">⚙️ 打開黑盒子：Event Loop 到底長怎樣？</h3>
+<p>我們把這個「餐廳模型」對應回程式語言的底層架構，就會看到經典的 <strong>Event Loop 機制</strong>。它由四個核心元件組成：</p>
+<ol>
+<li>
+<p><strong>Call Stack (呼叫堆疊 / 服務生本人)：</strong>
+這是程式執行的地方。裡面永遠只能有一個任務在跑。如果是簡單的數學計算 <code>1 + 1</code>，馬上算完馬上離開。</p>
+</li>
+<li>
+<p><strong>Web APIs / Background Workers (廚房 / 作業系統)：</strong>
+當服務生遇到那種要等很久的任務（例如 <code>去資料庫撈資料</code>、<code>打別人的 API</code>、<code>讀取硬碟檔案</code>），他就會把這個任務踢給背後的 C++ 模組或作業系統底層處理。這時候 Call Stack 就空出來了，可以繼續執行下一行 Code。</p>
+</li>
+<li>
+<p><strong>Task Queue / Callback Queue (出餐台 / 任務佇列)：</strong>
+當廚房（作業系統）把資料庫的資料撈完後，它不能直接把資料塞回 Call Stack（因為服務生可能正在忙別桌）。所以它會把打包好的回呼函式（Callback）放在「出餐台」排隊等待。</p>
+</li>
+<li>
+<p><strong>Event Loop (事件迴圈 / 大堂經理)：</strong>
+這是一個永遠在轉圈圈的無限迴圈。它唯一的工作就是：<strong>緊盯著 Call Stack 看。只要發現 Call Stack 空了（服務生閒下來了），就把 Task Queue（出餐台）裡排隊的第一個任務推到 Call Stack 裡執行。</strong></p>
+</li>
+</ol>
+<hr>
+<h3 id="heading-3">🧙‍♂️ 那 <code>async</code> / <code>await</code> 到底在幹嘛？</h3>
+<p>早期我們為了接住從出餐台送回來的資料，寫了滿坑滿谷的 Callback 函式（也就是惡名昭彰的 Callback Hell）。後來演進出 Promise，再後來，就是我們現在天天用的 <code>async / await</code>。</p>
+<p><code>await</code> 其實就是一層超美的語法糖。當你在程式碼裡寫下：</p>
+<pre><code class="language-python">
+      <div class="code-block-wrapper">
+        <button class="copy-btn" aria-label="Copy code">
+          <i class="fa-regular fa-copy"></i>
+        </button>
+        <pre class="hljs"><code><span class="hljs-comment"># FastAPI 範例</span>
+<span class="hljs-meta">@app.get(<span class="hljs-params"><span class="hljs-string">"/users/{user_id}"</span></span>)</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">get_user</span>(<span class="hljs-params">user_id: <span class="hljs-built_in">int</span></span>):
+    <span class="hljs-comment"># 遇到 await，主執行緒說：「好，你去旁邊撈資料，我先去服務別人！」</span>
+    user_data = <span class="hljs-keyword">await</span> db.fetch_user(user_id) 
+    
+    <span class="hljs-comment"># 等資料撈完被推回 Call Stack 後，再從這裡繼續往下跑</span>
+    <span class="hljs-keyword">return</span> {<span class="hljs-string">"user"</span>: user_data}
+</code></pre>
+      </div>
+    </code></pre>
+<p><strong><code>await</code> 的本質就是：在這裡暫停這個函式，把控制權還給 Event Loop，讓主執行緒去處理其他 API 請求。</strong> 等到底層把 I/O 做完，Event Loop 會再把你叫回來，從暫停的地方繼續往下跑。</p>
+<hr>
+<h3 id="heading-4">⚠️ 避雷針：別在 Event Loop 裡做數學題！</h3>
+<p>懂了這個原理，你就會明白單執行緒架構最大的一個死穴：<strong>CPU 密集型任務</strong>。</p>
+<p>如果今天某個客人不是點牛肉麵，而是點了一道「請服務生站在桌邊心算圓周率到小數點後一萬位」的菜（例如複雜的影像處理、巨大的 for 迴圈）。</p>
+<p>這下完蛋了！服務生（主執行緒）被卡死在 Call Stack 裡，他沒辦法去接單，也聽不到廚房的搖鈴聲。整個伺服器會瞬間失去反應，這就叫做 <strong>「阻塞了主執行緒 (Blocking the Main Thread)」</strong>。</p>
+<p>所以在 Node.js 或是 FastAPI 裡面，<strong>永遠不要在主執行緒裡執行大量消耗 CPU 的同步運算</strong>。遇到這種任務，乖乖把它丟給多進程（Multiprocessing）或是背景 Worker（如 Celery、Redis Queue）去算就對了。</p>
+<hr>
+<h3 id="heading-5">🍻 總結</h3>
+<p>總結一句話：<strong>單執行緒之所以能同時處理幾萬個連線，是因為它把「等待網路和硬碟的時間」全部榨乾了。</strong></p>
+<p>它不浪費任何一毫秒在「發呆等待」上，而是透過 Event Loop 不停地切換任務。這就是現代高效能 Web 框架（FastAPI, Node.js）能夠在輕量級資源下，扛住驚人流量的核心魔法！下次打下 <code>await</code> 的時候，別忘了感謝一下底層那個瘋狂奔跑的大堂經理吧！</p>
+</div></article></div><aside data-v-3859b43c="" class="toc-sidebar" aria-label="目錄"><div data-v-3859b43c="" class="toc-title">目錄</div><ul data-v-3859b43c="" class="toc-list"><li data-v-3859b43c="" class="toc-item toc-level-3 active">🍔 傳統的多執行緒 (Multi-threading)：霸氣但笨重的土豪餐廳</li><li data-v-3859b43c="" class="toc-item toc-level-3">🚀 單執行緒的非阻塞魔法 (Non-blocking)：時間管理大師</li><li data-v-3859b43c="" class="toc-item toc-level-3">⚙️ 打開黑盒子：Event Loop 到底長怎樣？</li><li data-v-3859b43c="" class="toc-item toc-level-3">🧙‍♂️ 那 async / await 到底在幹嘛？</li><li data-v-3859b43c="" class="toc-item toc-level-3">⚠️ 避雷針：別在 Event Loop 裡做數學題！</li><li data-v-3859b43c="" class="toc-item toc-level-3">🍻 總結</li></ul></aside><footer data-v-ad00b278="" data-v-3859b43c="" class="site-footer"><div data-v-ad00b278="" class="footer-container"><div data-v-ad00b278="" class="footer-brand"><h3 data-v-ad00b278="" class="footer-logo">MikeYC Wang</h3><p data-v-ad00b278="">Web Developer crafting digital experiences. <br data-v-ad00b278=""> 喜歡探索新技術，專注於打造兼具效能與美感的網頁應用。</p></div><div data-v-ad00b278="" class="footer-links"><h4 data-v-ad00b278="">Explore</h4><div data-v-ad00b278="" class="link-grid"><a data-v-ad00b278="" href="/MyPortfolio/lab" class=""><i data-v-ad00b278="" class="fa-brands fa-codepen"></i> 靈感碎片</a><a data-v-ad00b278="" href="/MyPortfolio/projects" class=""><i data-v-ad00b278="" class="fa-solid fa-code-branch"></i> 專案作品</a><a data-v-ad00b278="" href="/MyPortfolio/blog" class=""><i data-v-ad00b278="" class="fa-solid fa-pen-nib"></i> 個人部落格</a><a data-v-ad00b278="" href="/MyPortfolio/admin" class=""><i data-v-ad00b278="" class="fa-solid fa-user-secret"></i> 後台管理</a><a data-v-ad00b278="" href="/MyPortfolio/dashboard" class=""><i data-v-ad00b278="" class="fa-solid fa-server"></i> 控制台</a></div></div><div class="footer-social" data-v-ad00b278=""><h4 data-v-ad00b278="">Connect</h4><div class="social-links" data-v-ad00b278=""><a href="https://github.com/MikeYC-Wang" target="_blank" title="GitHub" data-v-ad00b278=""><i class="fa-brands fa-github" data-v-ad00b278=""></i> GitHub</a><a href="https://codepen.io/Mike-YC" target="_blank" title="CodePen" data-v-ad00b278=""><i class="fa-brands fa-codepen" data-v-ad00b278=""></i> CodePen</a><a href="https://www.instagram.com/wang_di_di_1130/" target="_blank" title="Instagram" data-v-ad00b278=""><i class="fa-brands fa-instagram" data-v-ad00b278=""></i> Instagram</a><a href="mailto:asd384639@gmail.com" title="Email" data-v-ad00b278=""><i class="fa-solid fa-envelope" data-v-ad00b278=""></i> Email</a></div></div></div><div data-v-ad00b278="" class="footer-bottom"><p data-v-ad00b278="">© 2026 MikeYC-Wang. All rights reserved.</p><p data-v-ad00b278="" class="build-info">Powered by Vue 3 &amp; FastAPI</p></div></footer></div></main><button data-v-5560a7fc="" data-v-bbcd8d65="" class="back-to-top" title="回到頂部" style="display: none;"><i data-v-5560a7fc="" class="fa-solid fa-arrow-up"></i></button><div data-v-f21af4ef="" data-v-bbcd8d65="" class="chat-widget-root"><!----><button data-v-f21af4ef="" class="chat-bubble-btn" title="打開 AI 助手"><i data-v-f21af4ef="" class="fa-solid fa-comments"></i></button></div></div></div>
+  
+<div><div><div class="Vue-Toastification__container top-left"></div></div><div><div class="Vue-Toastification__container top-center"></div></div><div><div class="Vue-Toastification__container top-right"></div></div><div><div class="Vue-Toastification__container bottom-left"></div></div><div><div class="Vue-Toastification__container bottom-center"></div></div><div><div class="Vue-Toastification__container bottom-right"></div></div></div></body></html>
